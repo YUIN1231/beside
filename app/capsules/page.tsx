@@ -1,14 +1,20 @@
+'use client'
+import Navbar from '../components/Navbar'
+
 export default function Capsules() {
   return (
-    <main className="min-h-screen bg-black text-white flex flex-col">
-      <div className="flex items-center px-6 pt-12 pb-6">
-        <h1 className="text-sm font-light tracking-widest text-gray-400">beside</h1>
+    <main className="min-h-screen flex flex-col pb-20" style={{background:'#0a0e1a', color:'#e8e4d9'}}>
+      <div className="flex items-center justify-between px-8 pt-14 pb-8" style={{borderBottom:'1px solid #1e2438'}}>
+        <button onClick={() => window.history.back()} className="text-xs tracking-[0.15em] uppercase" style={{color:'#4a5068'}}>back</button>
+        <span className="text-lg font-light tracking-[0.3em]">beside</span>
+        <div className="w-8" />
       </div>
-      <div className="flex-1 flex flex-col items-center justify-center px-6 text-center">
-        <p className="text-xs text-gray-600 tracking-widest uppercase mb-4">Capsules</p>
-        <h2 className="text-3xl font-light mb-3">Your capsules.</h2>
-        <p className="text-sm text-gray-600">No capsules yet.</p>
+      <div className="flex-1 flex flex-col items-center justify-center px-8 text-center gap-4">
+        <span className="text-xs tracking-[0.2em] uppercase" style={{color:'#c9a96e'}}>Capsules</span>
+        <h2 className="text-3xl font-extralight">Your capsules.</h2>
+        <p className="text-sm" style={{color:'#4a5068'}}>No capsules yet.</p>
       </div>
+      <Navbar active="capsules" />
     </main>
   )
 }
