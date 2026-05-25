@@ -1,9 +1,11 @@
 'use client'
 import { useState, useRef, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 
-type Step = 'voice' | 'photo' | 'video' | 'register' | 'tag' | 'seal'
+type Step = 'voice' | 'photo' | 'video' | 'register' | 'tag' | 'seal' | 'done'
 
 export default function Capsule() {
+  const router = useRouter()
   const [step, setStep] = useState<Step>('voice')
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
@@ -25,6 +27,7 @@ export default function Capsule() {
   const videoStreamRef = useRef<MediaStream | null>(null)
 
   const steps: Step[] = ['voice', 'photo', 'video', 'register', 'tag', 'seal']
+  const currentIndex = steps.indexOf(step as 'voice' | 'photo' | 'video' | 'register' | 'tag' | 'seal')
 
   const startRecording = async () => {
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
@@ -33,8 +36,7 @@ export default function Capsule() {
     chunksRef.current = []
     mediaRecorder.ondataavailable = (e) => chunksRef.current.push(e.data)
     mediaRecorder.onstop = () => {
-      const blob = new Blob(chunksRef.current, { type: 'audio/webm' })
-      setAudioBlob(blob)
+      setAudioBlob(new Blob(chunksRef.current, { type: 'audio/webm' }))
       stream.getTracks().forEach(t => t.stop())
     }
     mediaRecorder.start()
@@ -93,8 +95,7 @@ export default function Capsule() {
       videoChunksRef.current = []
       mediaRecorder.ondataavailable = (e) => videoChunksRef.current.push(e.data)
       mediaRecorder.onstop = () => {
-        const blob = new Blob(videoChunksRef.current, { type: 'video/webm' })
-        setVideoBlob(blob)
+        setVideoBlob(new Blob(videoChunksRef.current, { type: 'video/webm' }))
         stream.getTracks().forEach(t => t.stop())
         setVideoPreviewActive(false)
       }
@@ -111,64 +112,88 @@ export default function Capsule() {
     videoMediaRecorderRef.current?.stop()
   }
 
+  const btn = (label: string, onClick: () => void, active = true) => (
+    <button
+      onClick={onClick}
+      className="text-xs tracking-[0.15em] uppercase px-10 py-4 rounded-full transition-all duration-500 mt-4"
+      style={{
+        border: active ? '1px solid #c9a96e' : '1px solid #1e2438',
+        color: active ? '#c9a96e' : '#2a3050',
+      }}
+    >
+      {label}
+    </button>
+  )
+
   return (
-    <main className="min-h-screen bg-black text-white flex flex-col">
-      <div className="flex items-center justify-between px-8 pt-14 pb-8 border-b border-gray-900">
-        <button onClick={() => window.location.href = '/'} className="text-xs text-gray-600 tracking-widest uppercase">back</button>
+    <main className="min-h-screen flex flex-col" style={{background:'#0a0e1a', color:'#e8e4d9'}}>
+      <div className="flex items-center justify-between px-8 pt-14 pb-8" style={{borderBottom:'1px solid #1e2438'}}>
+        {step !== 'done' ? (
+          <button onClick={() => router.back()} className="text-xs tracking-[0.15em] uppercase" style={{color:'#4a5068'}}>back</button>
+        ) : (
+          <div className="w-8" />
+        )}
         <span className="text-lg font-light tracking-[0.3em]">beside</span>
         <div className="w-8" />
       </div>
 
-      <div className="flex gap-px px-8 mt-6 mb-10">
-        {steps.map((s, i) => (
-          <div key={s} className={`h-px flex-1 transition-all duration-700 ${i <= steps.indexOf(step) ? 'bg-white' : 'bg-gray-900'}`} />
-        ))}
-      </div>
+      {step !== 'done' && (
+        <div className="flex gap-px px-8 mt-6 mb-10">
+          {steps.map((s, i) => (
+            <div key={s} className="h-px flex-1 transition-all duration-700"
+              style={{background: i <= currentIndex ? '#c9a96e' : '#1e2438'}} />
+          ))}
+        </div>
+      )}
 
       {step === 'voice' && (
         <div className="flex-1 flex flex-col items-center justify-center px-8 text-center gap-6">
-          <span className="text-xs tracking-[0.2em] text-gray-600 uppercase">Voice</span>
+          <span className="text-xs tracking-[0.2em] uppercase" style={{color:'#c9a96e'}}>Voice</span>
           <h2 className="text-3xl font-extralight">Say something.</h2>
-          <p className="text-sm text-gray-700">One take. No edits.</p>
+          <p className="text-sm" style={{color:'#4a5068'}}>One take. No edits.</p>
           <button
             onClick={recording ? stopRecording : startRecording}
-            className={`w-20 h-20 rounded-full border flex items-center justify-center mt-4 transition-all duration-300 ${recording ? 'border-white' : 'border-gray-800 hover:border-gray-600'}`}
+            className="w-20 h-20 rounded-full flex items-center justify-center mt-4 transition-all duration-300"
+            style={{border: recording ? '1px solid #c9a96e' : '1px solid #2a3050'}}
           >
-            <div className={`bg-white transition-all duration-300 ${recording ? 'w-5 h-5 rounded-sm' : 'w-3 h-3 rounded-full'}`} />
+            <div className="transition-all duration-300" style={{
+              background:'#c9a96e',
+              width: recording ? '20px' : '12px',
+              height: recording ? '20px' : '12px',
+              borderRadius: recording ? '3px' : '50%',
+            }} />
           </button>
-          <p className="text-xs text-gray-800">{recording ? 'tap to stop' : 'tap to record'}</p>
-          {audioBlob && !recording && (
-            <button onClick={() => setStep('photo')} className="border border-gray-700 text-white text-xs tracking-[0.15em] uppercase px-10 py-4 rounded-full hover:border-white transition-all duration-500 mt-4">
-              Continue
-            </button>
-          )}
+          <p className="text-xs" style={{color:'#2a3050'}}>{recording ? 'tap to stop' : 'tap to record'}</p>
+          {audioBlob && !recording && btn('Continue', () => setStep('photo'))}
         </div>
       )}
 
       {step === 'photo' && (
         <div className="flex-1 flex flex-col items-center justify-center px-8 text-center gap-6">
-          <span className="text-xs tracking-[0.2em] text-gray-600 uppercase">Photo</span>
+          <span className="text-xs tracking-[0.2em] uppercase" style={{color:'#c9a96e'}}>Photo</span>
           <h2 className="text-3xl font-extralight">{"Who's beside you?"}</h2>
-          <p className="text-sm text-gray-700">One shot. Make it real.</p>
+          <p className="text-sm" style={{color:'#4a5068'}}>One shot. Make it real.</p>
           {!cameraActive && !photoBlob && (
-            <button onClick={startCamera} className="w-20 h-20 rounded-full border border-gray-800 flex items-center justify-center mt-4 hover:border-gray-600 transition-colors">
-              <div className="w-6 h-6 rounded border border-gray-600" />
+            <button
+              onClick={startCamera}
+              className="w-20 h-20 rounded-full flex items-center justify-center mt-4 transition-all duration-300"
+              style={{border:'1px solid #2a3050'}}
+            >
+              <div className="w-6 h-6 rounded" style={{border:'1px solid #4a5068'}} />
             </button>
           )}
           {cameraActive && (
             <div className="flex flex-col items-center gap-6">
-              <video ref={videoRef} autoPlay playsInline muted style={{ width: '260px', height: '260px', objectFit: 'cover', borderRadius: '4px' }} />
-              <button onClick={takePhoto} className="w-14 h-14 rounded-full border border-white flex items-center justify-center hover:bg-white transition-colors group">
-                <div className="w-2 h-2 rounded-full bg-white group-hover:bg-black" />
+              <video ref={videoRef} autoPlay playsInline muted style={{width:'260px', height:'260px', objectFit:'cover', borderRadius:'4px'}} />
+              <button onClick={takePhoto} className="w-14 h-14 rounded-full flex items-center justify-center transition-all" style={{border:'1px solid #c9a96e'}}>
+                <div className="w-2 h-2 rounded-full" style={{background:'#c9a96e'}} />
               </button>
             </div>
           )}
           {photoBlob && (
             <div className="flex flex-col items-center gap-6">
-              <img src={URL.createObjectURL(photoBlob)} style={{ width: '260px', height: '260px', objectFit: 'cover', borderRadius: '4px' }} alt="captured" />
-              <button onClick={() => setStep('video')} className="border border-gray-700 text-white text-xs tracking-[0.15em] uppercase px-10 py-4 rounded-full hover:border-white transition-all duration-500">
-                Continue
-              </button>
+              <img src={URL.createObjectURL(photoBlob)} style={{width:'260px', height:'260px', objectFit:'cover', borderRadius:'4px'}} alt="captured" />
+              {btn('Continue', () => setStep('video'))}
             </div>
           )}
           <canvas ref={canvasRef} className="hidden" />
@@ -177,29 +202,31 @@ export default function Capsule() {
 
       {step === 'video' && (
         <div className="flex-1 flex flex-col items-center justify-center px-8 text-center gap-6">
-          <span className="text-xs tracking-[0.2em] text-gray-600 uppercase">Video</span>
+          <span className="text-xs tracking-[0.2em] uppercase" style={{color:'#c9a96e'}}>Video</span>
           <h2 className="text-3xl font-extralight">Last one.</h2>
-          <p className="text-sm text-gray-700">10 seconds. Just be here.</p>
+          <p className="text-sm" style={{color:'#4a5068'}}>10 seconds. Just be here.</p>
           {!videoPreviewActive && !videoBlob && (
-            <button onClick={startVideoRecording} className="w-20 h-20 rounded-full border border-gray-800 flex items-center justify-center mt-4 hover:border-gray-600 transition-colors">
-              <div className="w-3 h-3 rounded-full bg-white" />
+            <button
+              onClick={startVideoRecording}
+              className="w-20 h-20 rounded-full flex items-center justify-center mt-4 transition-all duration-300"
+              style={{border:'1px solid #2a3050'}}
+            >
+              <div className="w-3 h-3 rounded-full" style={{background:'#c9a96e'}} />
             </button>
           )}
           {videoPreviewActive && (
             <div className="flex flex-col items-center gap-6">
-              <video ref={videoRecordRef} autoPlay playsInline muted style={{ width: '260px', height: '260px', objectFit: 'cover', borderRadius: '4px' }} />
-              <button onClick={stopVideoRecording} className="w-14 h-14 rounded-full border border-white flex items-center justify-center">
-                <div className="w-4 h-4 rounded-sm bg-white" />
+              <video ref={videoRecordRef} autoPlay playsInline muted style={{width:'260px', height:'260px', objectFit:'cover', borderRadius:'4px'}} />
+              <button onClick={stopVideoRecording} className="w-14 h-14 rounded-full flex items-center justify-center" style={{border:'1px solid #c9a96e'}}>
+                <div className="w-4 h-4 rounded-sm" style={{background:'#c9a96e'}} />
               </button>
-              <p className="text-xs text-gray-800">tap to stop · auto stops at 10s</p>
+              <p className="text-xs" style={{color:'#2a3050'}}>tap to stop · auto stops at 10s</p>
             </div>
           )}
           {videoBlob && !videoPreviewActive && (
             <div className="flex flex-col items-center gap-6">
-              <video src={URL.createObjectURL(videoBlob)} controls style={{ width: '260px', height: '260px', objectFit: 'cover', borderRadius: '4px' }} />
-              <button onClick={() => setStep('register')} className="border border-gray-700 text-white text-xs tracking-[0.15em] uppercase px-10 py-4 rounded-full hover:border-white transition-all duration-500">
-                Continue
-              </button>
+              <video src={URL.createObjectURL(videoBlob)} controls style={{width:'260px', height:'260px', objectFit:'cover', borderRadius:'4px'}} />
+              {btn('Continue', () => setStep('register'))}
             </div>
           )}
         </div>
@@ -207,39 +234,82 @@ export default function Capsule() {
 
       {step === 'register' && (
         <div className="flex-1 flex flex-col items-center justify-center px-8 text-center gap-6">
-          <span className="text-xs tracking-[0.2em] text-gray-600 uppercase">Almost there</span>
+          <span className="text-xs tracking-[0.2em] uppercase" style={{color:'#c9a96e'}}>Almost there</span>
           <h2 className="text-3xl font-extralight">Who are you?</h2>
-          <p className="text-sm text-gray-700">So we know where to send it.</p>
+          <p className="text-sm" style={{color:'#4a5068'}}>So we know where to send it.</p>
           <div className="flex flex-col gap-6 w-64 mt-4">
-            <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="your name" className="bg-transparent border-b border-gray-800 text-white text-center text-base pb-3 outline-none placeholder-gray-800 focus:border-gray-600 transition-colors" />
-            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="your email" className="bg-transparent border-b border-gray-800 text-white text-center text-base pb-3 outline-none placeholder-gray-800 focus:border-gray-600 transition-colors" />
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="your name"
+              className="bg-transparent text-center text-base pb-3 outline-none transition-colors"
+              style={{borderBottom:'1px solid #2a3050', color:'#e8e4d9'}}
+            />
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="your email"
+              className="bg-transparent text-center text-base pb-3 outline-none transition-colors"
+              style={{borderBottom:'1px solid #2a3050', color:'#e8e4d9'}}
+            />
           </div>
-          <button onClick={() => (name.trim() && email.trim()) && setStep('tag')} className={`border text-xs tracking-[0.15em] uppercase px-10 py-4 rounded-full transition-all duration-500 mt-4 ${name.trim() && email.trim() ? 'border-gray-700 text-white hover:border-white' : 'border-gray-900 text-gray-800'}`}>
-            Continue
-          </button>
+          {btn('Continue', () => setStep('tag'), !!(name.trim() && email.trim()))}
         </div>
       )}
 
       {step === 'tag' && (
         <div className="flex-1 flex flex-col items-center justify-center px-8 text-center gap-6">
-          <span className="text-xs tracking-[0.2em] text-gray-600 uppercase">Tag</span>
-          <h2 className="text-3xl font-extralight">Anyone to add?</h2>
-          <p className="text-sm text-gray-700">{"If they're on beside, tag them."}</p>
-          <input type="text" value={tag} onChange={(e) => setTag(e.target.value)} placeholder="name or email" className="bg-transparent border-b border-gray-800 text-white text-center text-base pb-3 w-64 outline-none placeholder-gray-800 focus:border-gray-600 transition-colors mt-4" />
-          <button onClick={() => setStep('seal')} className="border border-gray-700 text-white text-xs tracking-[0.15em] uppercase px-10 py-4 rounded-full hover:border-white transition-all duration-500 mt-4">
-            {tag.trim() ? 'Add & Continue' : 'Skip'}
-          </button>
+          <span className="text-xs tracking-[0.2em] uppercase" style={{color:'#c9a96e'}}>Tag</span>
+          <h2 className="text-3xl font-extralight">Anyone beside you?</h2>
+          <p className="text-sm leading-relaxed max-w-[260px]" style={{color:'#4a5068'}}>
+            {"If they're already on beside, tag them. They need to confirm they were actually there."}
+          </p>
+          <input
+            type="text"
+            value={tag}
+            onChange={(e) => setTag(e.target.value)}
+            placeholder="name or email"
+            className="bg-transparent text-center text-base pb-3 w-64 outline-none transition-colors mt-4"
+            style={{borderBottom:'1px solid #2a3050', color:'#e8e4d9'}}
+          />
+          {btn(tag.trim() ? 'Add & Continue' : 'Skip', () => setStep('seal'))}
         </div>
       )}
 
       {step === 'seal' && (
         <div className="flex-1 flex flex-col items-center justify-center px-8 text-center gap-6">
-          <span className="text-xs tracking-[0.2em] text-gray-600 uppercase">Ready</span>
+          <span className="text-xs tracking-[0.2em] uppercase" style={{color:'#c9a96e'}}>Ready</span>
           <h2 className="text-3xl font-extralight">Seal it.</h2>
-          <p className="text-sm text-gray-700 leading-relaxed max-w-[260px]">In 1 month, everyone in this capsule will get a notification.</p>
-          <p className="text-xs text-gray-800">Allow notifications to seal.</p>
-          <button onClick={() => { Notification.requestPermission().then((permission) => { if (permission === 'granted') { window.location.href = '/' } }) }} className="border border-gray-700 text-white text-xs tracking-[0.15em] uppercase px-10 py-4 rounded-full hover:border-white transition-all duration-500 mt-4">
-            Seal the Capsule
+          <p className="text-sm leading-relaxed max-w-[260px]" style={{color:'#4a5068'}}>
+            In 1 month, everyone in this capsule gets a notification. No edits. No deletes.
+          </p>
+          <p className="text-xs" style={{color:'#2a3050'}}>Allow notifications to seal.</p>
+          {btn('Seal the Capsule', () => {
+            Notification.requestPermission().then((p) => {
+              if (p === 'granted') setStep('done')
+            })
+          })}
+        </div>
+      )}
+
+      {step === 'done' && (
+        <div className="flex-1 flex flex-col items-center justify-center px-8 text-center gap-6">
+          <div className="w-16 h-16 rounded-full flex items-center justify-center" style={{border:'1px solid #c9a96e'}}>
+            <div className="w-2 h-2 rounded-full" style={{background:'#c9a96e'}} />
+          </div>
+          <span className="text-xs tracking-[0.2em] uppercase" style={{color:'#c9a96e'}}>Sealed</span>
+          <h2 className="text-3xl font-extralight">See you in 1 month.</h2>
+          <p className="text-sm leading-relaxed max-w-[260px]" style={{color:'#4a5068'}}>
+            Your capsule is sealed. A notification arrives in 1 month. Until then, it stays closed.
+          </p>
+          <button
+            onClick={() => router.push('/capsules')}
+            className="text-xs tracking-[0.15em] uppercase px-10 py-4 rounded-full transition-all duration-500 mt-4"
+            style={{border:'1px solid #2a3050', color:'#4a5068'}}
+          >
+            View your capsules
           </button>
         </div>
       )}

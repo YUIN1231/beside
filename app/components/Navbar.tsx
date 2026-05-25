@@ -1,29 +1,31 @@
 'use client'
+import Link from 'next/link'
 import { useState } from 'react'
 
-export default function Navbar({ active }: { active: 'home' | 'map' | 'capsules' | 'guide' | 'account' }) {
+type Page = 'home' | 'map' | 'capsules' | 'guide' | 'account'
+
+export default function Navbar({ active }: { active: Page }) {
   const [pressed, setPressed] = useState<string | null>(null)
 
   const leftItems = [
     { key: 'map', label: 'Map', href: '/map' },
     { key: 'capsules', label: 'Capsules', href: '/capsules' },
   ]
-
   const rightItems = [
     { key: 'guide', label: 'Guide', href: '/guide' },
     { key: 'account', label: 'Account', href: '/account' },
   ]
 
-  const NavItem = ({ item }: { item: { key: string, label: string, href: string } }) => {
+  const NavItem = ({ item }: { item: { key: string; label: string; href: string } }) => {
     const isActive = active === item.key
     const isPressed = pressed === item.key
     return (
-      <button
+      <Link
+        href={item.href}
         onMouseDown={() => setPressed(item.key)}
         onMouseUp={() => setPressed(null)}
         onTouchStart={() => setPressed(item.key)}
-        onTouchEnd={() => { setPressed(null); window.location.href = item.href }}
-        onClick={() => window.location.href = item.href}
+        onTouchEnd={() => setPressed(null)}
         className="flex flex-col items-center py-2 gap-1"
         style={{
           transform: isPressed ? 'scale(0.85)' : 'scale(1)',
@@ -45,7 +47,7 @@ export default function Navbar({ active }: { active: 'home' | 'map' | 'capsules'
           transition: 'all 0.3s ease',
           opacity: isActive ? 1 : 0,
         }} />
-      </button>
+      </Link>
     )
   }
 
@@ -54,12 +56,11 @@ export default function Navbar({ active }: { active: 'home' | 'map' | 'capsules'
       <div className="grid grid-cols-5 text-center items-center">
         {leftItems.map(item => <NavItem key={item.key} item={item} />)}
 
-        {/* 真ん中のカプセルボタン */}
         <div className="flex items-center justify-center">
-          <button
-            onClick={() => window.location.href = '/'}
-            onMouseDown={(e) => (e.currentTarget.style.transform = 'scale(0.9)')}
-            onMouseUp={(e) => (e.currentTarget.style.transform = 'scale(1)')}
+          <Link
+            href="/"
+            onMouseDown={(e) => { e.currentTarget.style.transform = 'scale(0.9)' }}
+            onMouseUp={(e) => { e.currentTarget.style.transform = 'scale(1)' }}
             className="w-12 h-12 rounded-full flex items-center justify-center transition-all duration-200"
             style={{
               border: '1px solid #c9a96e',
@@ -67,7 +68,7 @@ export default function Navbar({ active }: { active: 'home' | 'map' | 'capsules'
             }}
           >
             <div className="w-2 h-2 rounded-full" style={{background: active === 'home' ? '#0a0e1a' : '#c9a96e'}} />
-          </button>
+          </Link>
         </div>
 
         {rightItems.map(item => <NavItem key={item.key} item={item} />)}
