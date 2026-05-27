@@ -1,22 +1,120 @@
 @import "tailwindcss";
 
 :root {
-  --background: #0a0e1a;
-  --foreground: #e8e4d9;
-  --accent: #c9a96e;
-  --muted: #4a5068;
-  --border: #1e2438;
+  --bg:           #1a1008;
+  --surface:      #221508;
+  --surface-2:    #2a1c0c;
+  --border:       #2e1f0a;
+  --border-2:     #3d2a10;
+  --text:         #f0e6d0;
+  --text-2:       #8a7055;
+  --text-3:       #4a3520;
+  --gold:         #c9a96e;
+  --gold-bright:  #e8c98a;
+  --gold-dim:     #6b5530;
+  --gold-glow:    rgba(201, 169, 110, 0.15);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-geist-sans), sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-inter), sans-serif;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-* {
-  box-sizing: border-box;
-  padding: 0;
-  margin: 0;
+* { box-sizing: border-box; padding: 0; margin: 0; }
+
+/* ── Pulse rings (voice recording) ── */
+@keyframes pulse-ring {
+  0%   { transform: scale(1);   opacity: 0.7; }
+  100% { transform: scale(2.8); opacity: 0;   }
 }
+.pulse-ring   { animation: pulse-ring 2.2s cubic-bezier(0.15, 0.5, 0.3, 1) infinite; }
+.pulse-ring-2 { animation: pulse-ring 2.2s 0.7s cubic-bezier(0.15, 0.5, 0.3, 1) infinite; }
+.pulse-ring-3 { animation: pulse-ring 2.2s 1.4s cubic-bezier(0.15, 0.5, 0.3, 1) infinite; }
+
+/* ── Film development ── */
+@keyframes develop {
+  0%   { filter: brightness(0) sepia(1); }
+  25%  { filter: brightness(0.08) sepia(1) saturate(0.2); }
+  65%  { filter: brightness(0.75) sepia(0.4) saturate(0.7); }
+  100% { filter: brightness(1) sepia(0) saturate(1); }
+}
+.developing { animation: develop 1.8s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
+
+/* ── Iris open (camera) ── */
+@keyframes iris-open {
+  from { clip-path: circle(0% at 50% 50%); opacity: 0; }
+  to   { clip-path: circle(60% at 50% 50%); opacity: 1; }
+}
+.iris-open { animation: iris-open 0.45s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
+
+/* ── Fade in up ── */
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0);    }
+}
+.fade-up   { animation: fade-up 0.55s cubic-bezier(0.2, 0.6, 0.4, 1) both; }
+.fade-up-2 { animation: fade-up 0.55s 0.08s cubic-bezier(0.2, 0.6, 0.4, 1) both; }
+.fade-up-3 { animation: fade-up 0.55s 0.16s cubic-bezier(0.2, 0.6, 0.4, 1) both; }
+.fade-up-4 { animation: fade-up 0.55s 0.24s cubic-bezier(0.2, 0.6, 0.4, 1) both; }
+
+/* ── Fade in (no move) ── */
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.fade-in { animation: fade-in 0.6s ease both; }
+
+/* ── Sealed reveal ── */
+@keyframes sealed-text {
+  0%   { opacity: 0; letter-spacing: 0.6em; }
+  100% { opacity: 1; letter-spacing: 0.35em; }
+}
+.sealed-text { animation: sealed-text 1.2s cubic-bezier(0.2, 0.6, 0.4, 1) both; }
+
+/* ── Gold glow pulse ── */
+@keyframes gold-glow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(201,169,110,0); }
+  50%       { box-shadow: 0 0 40px 8px rgba(201,169,110,0.22), 0 0 80px 16px rgba(201,169,110,0.08); }
+}
+.gold-glow { animation: gold-glow 3s ease-in-out infinite; }
+
+/* ── Slow rotate ── */
+@keyframes slow-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+.slow-spin { animation: slow-spin 14s linear infinite; }
+
+/* ── Wax seal stamp ── */
+@keyframes stamp {
+  0%   { transform: scale(1.4); opacity: 0; }
+  60%  { transform: scale(0.94); opacity: 1; }
+  80%  { transform: scale(1.02); }
+  100% { transform: scale(1); opacity: 1; }
+}
+.stamp { animation: stamp 0.7s cubic-bezier(0.3, 0.8, 0.4, 1) both; }
+
+/* ── Video pulse dot ── */
+@keyframes vid-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.3; }
+}
+.vid-pulse { animation: vid-pulse 1s ease-in-out infinite; }
+
+/* ── Unlock reveal ── */
+@keyframes unlock-rise {
+  from { opacity: 0; transform: translateY(24px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.unlock-rise { animation: unlock-rise 0.8s cubic-bezier(0.2, 0.8, 0.3, 1) both; }
+
+/* ── Input underline ── */
+input::placeholder { color: var(--text-3); }
+input:focus { outline: none; }
+
+/* ── Scrollbar hide ── */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
