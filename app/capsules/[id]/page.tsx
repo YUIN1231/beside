@@ -3,6 +3,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 import { getCapsules, saveCapsule } from '../../lib/storage'
 import { useRequireAuth } from '../../lib/auth'
+import { shareOrDownload } from '../../lib/shareImage'
 import type { Capsule } from '../../lib/types'
 
 function fmtDate(iso: string) {
@@ -98,6 +99,20 @@ export default function CapsuleDetail() {
               <p className="text-xs ml-1" style={{ color: 'var(--text-3)' }}>+you</p>
             </div>
           )}
+          <button
+            onClick={() => shareOrDownload(cap)}
+            className="flex items-center gap-2 px-6 py-3 rounded-full text-sm tracking-[0.06em] transition-all active:scale-95"
+            style={{
+              background: 'linear-gradient(135deg, #e8c98a 0%, #c9a96e 100%)',
+              color: '#0f0a05', fontWeight: 600,
+              boxShadow: '0 4px 20px rgba(201,169,110,0.22)',
+            }}
+          >
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+              <path d="M8 1v9M4 5l4-4 4 4M2 11v3h12v-3" stroke="#0f0a05" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            Share to Stories
+          </button>
         </div>
       </main>
     )
@@ -208,6 +223,22 @@ export default function CapsuleDetail() {
             ))}
           </div>
         )}
+      </div>
+
+      <div className="px-8 pb-6 flex justify-end">
+        <button
+          onClick={() => shareOrDownload(cap)}
+          className="flex items-center gap-2 px-5 py-2.5 rounded-full text-xs tracking-[0.06em] transition-all active:scale-95"
+          style={{
+            background: 'linear-gradient(135deg, #e8c98a 0%, #c9a96e 100%)',
+            color: '#0f0a05', fontWeight: 600,
+          }}
+        >
+          <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
+            <path d="M8 1v9M4 5l4-4 4 4M2 11v3h12v-3" stroke="#0f0a05" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+          Share to Stories
+        </button>
       </div>
 
       <div className="px-8 flex flex-col gap-4">

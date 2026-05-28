@@ -7,6 +7,7 @@ import {
   isAuthenticated, getActiveSealedCapsule, getReadyCapsule,
   hasCapsuledThisMonth, saveCapsule, getUser,
 } from './lib/storage'
+import { shareOrDownload } from './lib/shareImage'
 import { reverseGeocode } from './lib/supabase'
 import type { Capsule, Member, GeoLocation } from './lib/types'
 
@@ -201,56 +202,7 @@ export default function Home() {
   /* ── share card ── */
   const share = async () => {
     if (!sealedData) return
-    const canvas  = document.createElement('canvas')
-    canvas.width  = 1080
-    canvas.height = 1920
-    const ctx     = canvas.getContext('2d')!
-    /* dark bg */
-    ctx.fillStyle = '#1a1008'
-    ctx.fillRect(0, 0, 1080, 1920)
-    /* wax seal circle */
-    const cx = 540, cy = 860
-    ctx.beginPath()
-    ctx.arc(cx, cy, 200, 0, Math.PI * 2)
-    ctx.fillStyle = '#c9a96e'
-    ctx.fill()
-    /* inner ring */
-    ctx.beginPath()
-    ctx.arc(cx, cy, 170, 0, Math.PI * 2)
-    ctx.strokeStyle = '#1a1008'
-    ctx.lineWidth = 3
-    ctx.stroke()
-    /* B monogram */
-    ctx.font      = 'bold 140px serif'
-    ctx.fillStyle = '#1a1008'
-    ctx.textAlign = 'center'
-    ctx.textBaseline = 'middle'
-    ctx.fillText('B', cx, cy)
-    /* top text */
-    ctx.font      = '42px sans-serif'
-    ctx.fillStyle = '#f0e6d0'
-    ctx.fillText('beside', cx, 200)
-    ctx.font      = '32px sans-serif'
-    ctx.fillStyle = '#8a7055'
-    ctx.fillText('Something is sealed inside.', cx, 270)
-    ctx.fillText("It opens on " + new Date(sealedData.opensAt!).toLocaleDateString('en-US', { month:'long', day:'numeric' }), cx, 320)
-    /* bottom */
-    ctx.font      = '28px sans-serif'
-    ctx.fillStyle = '#4a3520'
-    ctx.fillText('beside-gules.vercel.app', cx, 1780)
-
-    canvas.toBlob(async blob => {
-      if (!blob) return
-      const file = new File([blob], 'beside-sealed.png', { type: 'image/png' })
-      if (navigator.share && navigator.canShare?.({ files: [file] })) {
-        await navigator.share({ files: [file], title: 'beside', text: 'Something is sealed inside.' })
-      } else {
-        const a = document.createElement('a')
-        a.href = URL.createObjectURL(blob)
-        a.download = 'beside-sealed.png'
-        a.click()
-      }
-    }, 'image/png')
+    await shareOrDownload(sealedData)
   }
 
   /* ── days until ── */
@@ -731,13 +683,17 @@ export default function Home() {
           </div>
           <button
             onClick={share}
-            className="fade-up-3 flex items-center gap-3 px-8 py-4 rounded-full transition-all active:scale-95"
-            style={{ border: '1px solid var(--gold)', color: 'var(--gold)' }}
+            className="fade-up-3 w-full flex items-center justify-center gap-3 py-4 rounded-full transition-all active:scale-95"
+            style={{
+              background: 'linear-gradient(135deg, #e8c98a 0%, #c9a96e 100%)',
+              color: '#0f0a05', fontWeight: 600,
+              boxShadow: '0 4px 28px rgba(201,169,110,0.28)',
+            }}
           >
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-              <path d="M8 1v9M4 5l4-4 4 4M2 11v3h12v-3" stroke="var(--gold)" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M8 1v9M4 5l4-4 4 4M2 11v3h12v-3" stroke="#0f0a05" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
-            Share the mystery
+            Share to Stories
           </button>
           <button onClick={() => router.push('/capsules')} className="text-xs tracking-[0.12em]" style={{ color: 'var(--text-3)' }}>
             View capsules
