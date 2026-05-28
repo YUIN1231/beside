@@ -13,7 +13,6 @@ export default function Account() {
     setCapsules(getCapsules())
   }, [])
 
-  /* all unique members across all capsules */
   const connections: (Member & { city: string; date: string })[] = []
   const seen = new Set<string>()
   capsules.forEach(c => {
@@ -21,14 +20,22 @@ export default function Account() {
       const key = m.email ?? m.name
       if (!seen.has(key)) {
         seen.add(key)
-        connections.push({ ...m, city: c.city, date: new Date(c.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) })
+        connections.push({
+          ...m,
+          city: c.city,
+          date: new Date(c.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        })
       }
     })
   })
 
+  const initial = user?.name?.[0]?.toUpperCase() ?? 'Y'
+
   return (
     <main className="min-h-screen flex flex-col pb-24" style={{ background: 'var(--bg)', color: 'var(--text)' }}>
-      <div className="flex items-center justify-between px-8 pt-14 pb-8" style={{ borderBottom: '1px solid var(--border)' }}>
+
+      {/* header */}
+      <div className="flex items-center justify-between px-6 pt-14 pb-4">
         <div className="w-8" />
         <span className="text-base font-light tracking-[0.4em]" style={{
           fontFamily: 'var(--font-fraunces)',
@@ -38,73 +45,101 @@ export default function Account() {
         <div className="w-8" />
       </div>
 
-      <div className="px-8 pt-8">
-        <p className="text-[10px] tracking-[0.25em] uppercase mb-6" style={{ color: 'var(--gold-dim)' }}>Account</p>
-
-        {/* profile */}
-        <div className="flex items-center gap-4 mb-8">
-          <div className="w-14 h-14 rounded-full flex items-center justify-center text-lg" style={{
-            border: '1px solid var(--border-2)', color: 'var(--gold)', fontFamily: 'var(--font-fraunces)',
-          }}>
-            {user?.name?.[0]?.toUpperCase() ?? 'Y'}
-          </div>
-          <div>
-            <p className="font-light text-base">{user?.name ?? 'Traveller'}</p>
-            <p className="text-xs mt-0.5" style={{ color: 'var(--text-2)' }}>{user?.email ?? '—'}</p>
-            <p className="text-xs mt-0.5" style={{ color: 'var(--text-3)' }}>
-              {capsules.length} capsule{capsules.length !== 1 ? 's' : ''} · {connections.length} connection{connections.length !== 1 ? 's' : ''}
-            </p>
+      {/* ── Profile ── */}
+      <div className="flex flex-col items-center px-6 pt-6 pb-8">
+        <div className="story-ring mb-4" style={{ width: '88px', height: '88px' }}>
+          <div className="story-ring-inner" style={{ width: '83px', height: '83px' }}>
+            <div style={{
+              width: '77px', height: '77px', borderRadius: '50%',
+              background: 'var(--surface)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: '28px', fontFamily: 'var(--font-fraunces)',
+              color: 'var(--gold)',
+            }}>{initial}</div>
           </div>
         </div>
 
-        <div style={{ borderBottom: '1px solid var(--border)', marginBottom: '24px' }} />
+        <p className="text-base font-light mb-0.5">{user?.name ?? 'Traveller'}</p>
+        {user?.email && (
+          <p className="text-xs mb-4" style={{ color: 'var(--text-2)' }}>{user.email}</p>
+        )}
 
-        {/* connections */}
-        <div className="mb-2 flex items-end justify-between">
-          <p className="text-[10px] tracking-[0.2em] uppercase" style={{ color: 'var(--text-2)' }}>Connections</p>
+        {/* stats */}
+        <div className="flex gap-10 mt-2">
+          {[
+            { value: capsules.length,    label: 'capsules' },
+            { value: connections.length, label: 'connections' },
+          ].map((s, i) => (
+            <div key={s.label} className="flex items-center gap-10">
+              {i > 0 && <div style={{ width: '1px', height: '28px', background: 'rgba(240,230,208,0.07)' }} />}
+              <div className="flex flex-col items-center gap-0.5">
+                <span className="text-xl font-light" style={{ fontFamily: 'var(--font-fraunces)' }}>{s.value}</span>
+                <span className="text-[10px] tracking-[0.12em] uppercase" style={{ color: 'var(--text-3)' }}>{s.label}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ── Connections ── */}
+      <div style={{ borderTop: '1px solid rgba(240,230,208,0.06)' }}>
+        <div className="flex items-center justify-between px-6 py-4">
+          <p className="text-[11px] tracking-[0.16em] uppercase" style={{ color: 'var(--text-2)' }}>Connections</p>
           <p className="text-[10px]" style={{ color: 'var(--text-3)' }}>met in person only</p>
         </div>
 
         {connections.length === 0 ? (
-          <p className="text-sm mt-4 mb-8" style={{ color: 'var(--text-3)' }}>No connections yet. Take a capsule with someone.</p>
+          <p className="px-6 pb-6 text-sm" style={{ color: 'var(--text-3)' }}>
+            No connections yet. Take a capsule with someone.
+          </p>
         ) : (
-          <div className="flex flex-col gap-2 mb-8">
+          <div className="px-5 pb-4 flex flex-col gap-2">
             {connections.map((c, i) => (
-              <div key={i} className="flex items-center gap-3 p-4 rounded-xl" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
-                <div className="w-9 h-9 rounded-full flex items-center justify-center text-xs flex-shrink-0" style={{ background: 'var(--border-2)', color: 'var(--gold)' }}>
-                  {c.initial}
+              <div key={i} className="flex items-center gap-3 p-4 rounded-2xl" style={{
+                background: 'rgba(240,230,208,0.03)',
+                border: '1px solid rgba(240,230,208,0.06)',
+              }}>
+                <div className="story-ring-dim flex-shrink-0" style={{ width: '44px', height: '44px' }}>
+                  <div className="story-ring-dim-inner" style={{ width: '39px', height: '39px' }}>
+                    <div style={{
+                      width: '33px', height: '33px', borderRadius: '50%',
+                      background: 'var(--surface)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: '13px', color: 'var(--gold)', fontFamily: 'var(--font-fraunces)',
+                    }}>{c.initial}</div>
+                  </div>
                 </div>
                 <div>
                   <p className="text-sm font-light">{c.name}</p>
-                  <p className="text-xs mt-0.5" style={{ color: 'var(--text-2)' }}>Met in {c.city} · {c.date}</p>
+                  <p className="text-xs mt-0.5" style={{ color: 'var(--text-2)' }}>{c.city} · {c.date}</p>
                 </div>
               </div>
             ))}
           </div>
         )}
+      </div>
 
-        <div style={{ borderBottom: '1px solid var(--border)', marginBottom: '8px' }} />
-
+      {/* ── Settings ── */}
+      <div className="px-5 mt-2" style={{ borderTop: '1px solid rgba(240,230,208,0.06)' }}>
         {[
           { label: 'Notifications', sub: 'When beside reaches you' },
           { label: 'Privacy', sub: 'Who can tag you in capsules' },
         ].map(item => (
-          <div key={item.label} className="flex items-center justify-between py-4" style={{ borderBottom: '1px solid var(--border)' }}>
+          <div key={item.label} className="flex items-center justify-between py-5" style={{ borderBottom: '1px solid rgba(240,230,208,0.05)' }}>
             <div>
               <p className="text-sm font-light">{item.label}</p>
               <p className="text-xs mt-0.5" style={{ color: 'var(--text-2)' }}>{item.sub}</p>
             </div>
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-              <path d="M4 2l4 4-4 4" stroke="var(--text-3)" strokeWidth="1" strokeLinecap="round" />
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+              <path d="M5 3l4 4-4 4" stroke="rgba(240,230,208,0.25)" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </div>
         ))}
-
-        <div className="py-4" style={{ borderBottom: '1px solid var(--border)' }}>
-          <p className="text-sm" style={{ color: 'var(--gold)' }}>Sign out</p>
+        <div className="py-5" style={{ borderBottom: '1px solid rgba(240,230,208,0.05)' }}>
+          <p className="text-sm font-light" style={{ color: 'var(--gold)' }}>Sign out</p>
         </div>
-        <div className="py-4">
-          <p className="text-xs" style={{ color: 'var(--text-3)' }}>Delete account</p>
+        <div className="py-5">
+          <p className="text-xs" style={{ color: 'rgba(240,230,208,0.18)' }}>Delete account</p>
         </div>
       </div>
 

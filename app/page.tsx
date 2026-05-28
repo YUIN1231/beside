@@ -274,23 +274,24 @@ export default function Home() {
     return (
       <main className="min-h-screen flex flex-col pb-24" style={{ background: 'var(--bg)', color: 'var(--text)' }}>
         <Header />
-        <div className="flex-1 flex flex-col items-center justify-center px-8 text-center gap-8">
-          <div className="gold-glow rounded-full flex items-center justify-center" style={{
-            width: '100px', height: '100px',
-            border: '1px solid var(--gold)',
-            background: 'var(--surface)',
-          }}>
-            <Pill gold />
+        <div className="flex-1 flex flex-col items-center justify-center px-8 text-center gap-10">
+          <div className="story-ring gold-glow" style={{ width: '110px', height: '110px' }}>
+            <div className="story-ring-inner" style={{ width: '104px', height: '104px' }}>
+              <div style={{
+                width: '98px', height: '98px', borderRadius: '50%',
+                background: 'var(--surface)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                <Pill gold />
+              </div>
+            </div>
           </div>
           <div className="fade-up flex flex-col gap-3">
-            <p className="text-xs tracking-[0.25em] uppercase" style={{ color: 'var(--gold-dim)' }}>Sealed</p>
+            <p className="text-[11px] tracking-[0.22em] uppercase" style={{ color: 'var(--gold-dim)' }}>Sealed</p>
             <p className="text-[3.5rem] font-light leading-none" style={{ fontFamily: 'var(--font-fraunces)', color: 'var(--gold)' }}>{days}</p>
             <p className="text-sm" style={{ color: 'var(--text-2)' }}>days until it opens</p>
-            <p className="text-xs mt-2" style={{ color: 'var(--text-3)' }}>{sealedCap.city}</p>
+            <p className="text-xs mt-1" style={{ color: 'var(--text-3)' }}>{sealedCap.city}</p>
           </div>
-          <p className="text-xs leading-relaxed max-w-[220px]" style={{ color: 'var(--text-3)' }}>
-            Next capsule available in {days} days.
-          </p>
         </div>
         <Navbar active="home" />
       </main>
@@ -302,25 +303,31 @@ export default function Home() {
     return (
       <main className="min-h-screen flex flex-col pb-24" style={{ background: 'var(--bg)', color: 'var(--text)' }}>
         <Header />
-        <div className="flex-1 flex flex-col items-center justify-center px-8 text-center gap-8">
-          <div className="gold-glow rounded-full flex items-center justify-center cursor-pointer" style={{
-            width: '100px', height: '100px',
-            border: '1px solid var(--gold)',
-            background: 'var(--surface)',
-          }}>
-            <Pill gold />
+        <div className="flex-1 flex flex-col items-center justify-center px-8 text-center gap-10">
+          <div className="story-ring gold-glow" style={{ width: '110px', height: '110px' }}>
+            <div className="story-ring-inner" style={{ width: '104px', height: '104px' }}>
+              <div style={{
+                width: '98px', height: '98px', borderRadius: '50%',
+                background: 'var(--surface)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                <Pill gold />
+              </div>
+            </div>
           </div>
           <div className="fade-up flex flex-col gap-3">
-            <p className="text-xs tracking-[0.25em] uppercase" style={{ color: 'var(--gold)' }}>Ready</p>
-            <h2 className="text-3xl font-light" style={{ fontFamily: 'var(--font-fraunces)' }}>
-              Your capsule is open.
-            </h2>
+            <p className="text-[11px] tracking-[0.22em] uppercase" style={{ color: 'var(--gold)' }}>Ready</p>
+            <h2 className="text-3xl font-light" style={{ fontFamily: 'var(--font-fraunces)' }}>Your capsule is open.</h2>
             <p className="text-sm" style={{ color: 'var(--text-2)' }}>{sealedCap.city}</p>
           </div>
           <button
             onClick={() => router.push(`/capsules/${sealedCap.id}`)}
-            className="text-sm tracking-[0.1em] px-10 py-4 rounded-full transition-all duration-300 active:scale-95"
-            style={{ background: 'var(--gold)', color: 'var(--bg)' }}
+            className="text-sm tracking-[0.06em] px-10 py-3.5 rounded-full transition-all duration-300 active:scale-95"
+            style={{
+              background: 'linear-gradient(135deg, #e8c98a 0%, #c9a96e 100%)',
+              color: '#0f0a05', fontWeight: 600,
+              boxShadow: '0 4px 24px rgba(201,169,110,0.25)',
+            }}
           >
             Open it
           </button>
@@ -340,43 +347,46 @@ export default function Home() {
       {step === 'landing' && (
         <>
           <Header showAccount />
-          <div className="flex-1 flex flex-col items-center justify-center px-8 text-center gap-8 pb-24">
-            {/* hero pill */}
-            <div className="relative flex items-center justify-center" style={{ width: '130px', height: '130px' }}>
-              <svg className="absolute inset-0 slow-spin" width="130" height="130" viewBox="0 0 130 130" fill="none">
-                <circle cx="65" cy="65" r="60" stroke="url(#g1)" strokeWidth="1" strokeDasharray="50 330" strokeLinecap="round" />
-                <defs>
-                  <linearGradient id="g1" x1="0" y1="0" x2="130" y2="130" gradientUnits="userSpaceOnUse">
-                    <stop stopColor="var(--gold)" /><stop offset="1" stopColor="transparent" />
-                  </linearGradient>
-                </defs>
-              </svg>
-              <div style={{ position: 'absolute', inset: 0, border: '1px solid var(--border)', borderRadius: '50%' }} />
-              <Pill gold />
+          <div className="flex-1 flex flex-col items-center justify-center px-8 text-center gap-10 pb-24">
+            {/* story ring hero */}
+            <div className="relative flex items-center justify-center">
+              <div className="story-ring slow-spin" style={{ width: '120px', height: '120px' }}>
+                <div className="story-ring-inner" style={{ width: '114px', height: '114px' }}>
+                  <div style={{
+                    width: '108px', height: '108px', borderRadius: '50%',
+                    background: 'var(--surface)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}>
+                    <Pill gold />
+                  </div>
+                </div>
+              </div>
             </div>
 
             <div className="fade-up flex flex-col gap-3">
-              <p className="text-xs tracking-[0.25em] uppercase" style={{ color: 'var(--gold-dim)' }}>
+              <p className="text-[11px] tracking-[0.22em] uppercase" style={{ color: 'var(--gold-dim)' }}>
                 {geo?.city ?? '···'} · {new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
               </p>
-              <h1 className="text-[2.1rem] leading-snug font-light" style={{ fontFamily: 'var(--font-fraunces)' }}>
+              <h1 className="text-[2.2rem] leading-[1.2] font-light" style={{ fontFamily: 'var(--font-fraunces)' }}>
                 Who's beside you<br />tonight?
               </h1>
             </div>
 
-            <p className="fade-up-2 text-sm leading-relaxed" style={{ color: 'var(--text-2)' }}>
+            <p className="fade-up-2 text-sm leading-relaxed" style={{ color: 'var(--text-2)', maxWidth: '240px' }}>
               One take. Sealed for 1 month.<br />Only people actually beside you.
             </p>
 
             {monthlyUsed ? (
-              <div className="fade-up-3 flex flex-col items-center gap-2">
-                <p className="text-xs" style={{ color: 'var(--text-3)' }}>You've already made a capsule this month.</p>
-              </div>
+              <p className="fade-up-3 text-xs" style={{ color: 'var(--text-3)' }}>You've already made a capsule this month.</p>
             ) : (
               <button
                 onClick={() => setStep('voice')}
-                className="fade-up-3 text-sm tracking-[0.08em] px-12 py-4 rounded-full transition-all duration-300 active:scale-95"
-                style={{ background: 'var(--gold)', color: 'var(--bg)', fontWeight: 500 }}
+                className="fade-up-3 text-sm tracking-[0.06em] px-10 py-3.5 rounded-full transition-all duration-300 active:scale-95"
+                style={{
+                  background: 'linear-gradient(135deg, #e8c98a 0%, #c9a96e 100%)',
+                  color: '#0f0a05', fontWeight: 600,
+                  boxShadow: '0 4px 24px rgba(201,169,110,0.25)',
+                }}
               >
                 Take a capsule
               </button>
@@ -404,7 +414,7 @@ export default function Home() {
                   frozen={!!audioBlob && !recording}
                   frozenData={waveSnap}
                   onFreezeData={handleWaveSnap}
-                  color="var(--gold)"
+                  color="#c9a96e"
                   height={80}
                 />
               ) : (
@@ -607,9 +617,9 @@ export default function Home() {
                 }}
                 placeholder="Name or email — press Enter"
                 style={{
-                  width: '100%', background: 'var(--surface)',
-                  border: '1px solid var(--border-2)', borderRadius: '12px',
-                  padding: '14px 16px', color: 'var(--text)', fontSize: '14px',
+                  width: '100%', background: 'rgba(240,230,208,0.05)',
+                  border: '1px solid rgba(240,230,208,0.1)', borderRadius: '16px',
+                  padding: '16px 18px', color: 'var(--text)', fontSize: '14px',
                   outline: 'none',
                 }}
               />
@@ -741,7 +751,7 @@ export default function Home() {
 /* ── Shared sub-components ─────────────────────────────────────────── */
 function Header({ showAccount }: { showAccount?: boolean }) {
   return (
-    <div className="flex items-center justify-between px-8 pt-14 pb-8" style={{ borderBottom: '1px solid var(--border)' }}>
+    <div className="flex items-center justify-between px-6 pt-14 pb-6">
       <div className="w-8" />
       <span className="text-base font-light tracking-[0.4em]" style={{
         fontFamily: 'var(--font-fraunces)',
@@ -749,7 +759,8 @@ function Header({ showAccount }: { showAccount?: boolean }) {
         WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
       }}>beside</span>
       {showAccount
-        ? <a href="/account" className="w-8 h-8 rounded-full flex items-center justify-center text-[10px]" style={{ border: '1px solid var(--border-2)', color: 'var(--gold)' }}>D</a>
+        ? <a href="/account" className="w-8 h-8 rounded-full flex items-center justify-center text-[10px]"
+            style={{ background: 'rgba(201,169,110,0.1)', color: 'var(--gold)' }}>Y</a>
         : <div className="w-8" />}
     </div>
   )
@@ -758,21 +769,30 @@ function Header({ showAccount }: { showAccount?: boolean }) {
 function StepHeader({ label, onBack, step, total }: { label: string; onBack: () => void; step: number; total: number }) {
   return (
     <div>
-      <div className="flex items-center justify-between px-8 pt-14 pb-6" style={{ borderBottom: '1px solid var(--border)' }}>
-        <button onClick={onBack} className="text-[10px] tracking-[0.2em] uppercase" style={{ color: 'var(--text-2)' }}>back</button>
+      <div className="flex items-center justify-between px-6 pt-14 pb-5">
+        <button onClick={onBack} style={{
+          width: '32px', height: '32px', borderRadius: '50%',
+          background: 'rgba(240,230,208,0.06)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <path d="M10 3L5 8l5 5" stroke="rgba(240,230,208,0.6)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </button>
         <span className="text-base font-light tracking-[0.4em]" style={{
           fontFamily: 'var(--font-fraunces)',
           background: 'linear-gradient(135deg, var(--gold-bright), var(--gold))',
           WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
         }}>beside</span>
-        <span className="text-[10px] tracking-[0.15em] uppercase" style={{ color: 'var(--text-3)' }}>{step}/{total}</span>
+        <span className="text-[10px] tabular-nums" style={{ color: 'var(--text-3)', width: '32px', textAlign: 'right' }}>{step}/{total}</span>
       </div>
       {/* step bar */}
-      <div className="flex gap-1 px-8 pt-4">
+      <div className="flex gap-1.5 px-6">
         {Array.from({ length: total }).map((_, i) => (
-          <div key={i} className="flex-1 h-px transition-all duration-500" style={{
-            background: i < step ? 'var(--gold)' : i === step - 1 ? 'var(--gold)' : 'var(--border)',
-            boxShadow: i === step - 1 ? '0 0 6px rgba(201,169,110,0.5)' : 'none',
+          <div key={i} className="flex-1 rounded-full transition-all duration-500" style={{
+            height: '2px',
+            background: i < step ? 'var(--gold)' : 'rgba(240,230,208,0.1)',
+            boxShadow: i === step - 1 ? '0 0 8px rgba(201,169,110,0.4)' : 'none',
           }} />
         ))}
       </div>

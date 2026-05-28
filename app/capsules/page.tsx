@@ -9,11 +9,10 @@ function daysUntil(iso?: string) {
   if (!iso) return 0
   return Math.ceil((new Date(iso).getTime() - Date.now()) / 86400000)
 }
-function fmtDate(iso: string) {
+function fmtDateLong(iso: string) {
   return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 }
 
-/* group capsules by city */
 function byCity(capsules: Capsule[]) {
   const map: Record<string, Capsule[]> = {}
   capsules.forEach(c => {
@@ -23,17 +22,85 @@ function byCity(capsules: Capsule[]) {
   return Object.entries(map)
 }
 
+function CapsuleStoryRing({ capsule, index }: { capsule: Capsule; index: number }) {
+  const days   = daysUntil(capsule.opensAt)
+  const isOpen = !!capsule.sealedAt && days <= 0
+  const isSealed = !!capsule.sealedAt && days > 0
+
+  return (
+    <Link
+      href={`/capsules/${capsule.id}`}
+      className="flex flex-col items-center gap-2 story-in flex-shrink-0"
+      style={{ animationDelay: `${index * 0.05}s`, width: '72px' }}
+    >
+      {isOpen || isSealed ? (
+        <div className={isOpen ? 'story-ring' : 'story-ring-dim'} style={{ width: '64px', height: '64px' }}>
+          <div className={isOpen ? 'story-ring-inner' : 'story-ring-dim-inner'} style={{ width: '59px', height: '59px' }}>
+            <div style={{
+              width: '53px', height: '53px', borderRadius: '50%',
+              background: 'var(--surface)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              {/* pill icon */}
+              <div style={{
+                width: '12px', height: '20px', borderRadius: '6px',
+                border: `1px solid ${isOpen ? 'var(--gold)' : 'rgba(240,230,208,0.25)'}`,
+                position: 'relative',
+              }}>
+                <div style={{
+                  position: 'absolute', top: '46%', left: 0, right: 0, height: '1px',
+                  background: isOpen ? 'var(--gold-dim)' : 'rgba(240,230,208,0.15)',
+                }} />
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div style={{
+          width: '64px', height: '64px', borderRadius: '50%',
+          background: 'rgba(240,230,208,0.04)',
+          border: '1.5px dashed rgba(240,230,208,0.12)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+          <div style={{
+            width: '12px', height: '20px', borderRadius: '6px',
+            border: '1px solid rgba(240,230,208,0.18)',
+            position: 'relative',
+          }}>
+            <div style={{
+              position: 'absolute', top: '46%', left: 0, right: 0, height: '1px',
+              background: 'rgba(240,230,208,0.1)',
+            }} />
+          </div>
+        </div>
+      )}
+      <span className="text-center leading-tight" style={{
+        fontSize: '10px', color: isOpen ? 'var(--gold)' : 'var(--text-3)',
+        maxWidth: '64px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+      }}>
+        {isOpen ? 'open' : isSealed ? `${days}d` : 'draft'}
+      </span>
+      <span className="text-center leading-tight" style={{
+        fontSize: '9px', color: 'var(--text-3)',
+        maxWidth: '64px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+      }}>
+        {capsule.city}
+      </span>
+    </Link>
+  )
+}
+
 export default function Capsules() {
   const [capsules, setCapsules] = useState<Capsule[]>([])
-
   useEffect(() => { setCapsules(getCapsules()) }, [])
 
   const groups = byCity(capsules)
 
   return (
     <main className="min-h-screen flex flex-col pb-24" style={{ background: 'var(--bg)', color: 'var(--text)' }}>
+
       {/* header */}
-      <div className="flex items-center justify-between px-8 pt-14 pb-8" style={{ borderBottom: '1px solid var(--border)' }}>
+      <div className="flex items-center justify-between px-6 pt-14 pb-4">
         <div className="w-8" />
         <span className="text-base font-light tracking-[0.4em]" style={{
           fontFamily: 'var(--font-fraunces)',
@@ -43,110 +110,143 @@ export default function Capsules() {
         <div className="w-8" />
       </div>
 
-      <div className="px-8 pt-8 pb-2">
-        <p className="text-[10px] tracking-[0.25em] uppercase mb-2" style={{ color: 'var(--gold-dim)' }}>Capsules</p>
-        <h2 className="text-2xl font-light" style={{ fontFamily: 'var(--font-fraunces)' }}>
-          Every place you've been.
-        </h2>
-      </div>
-
       {capsules.length === 0 ? (
-        <div className="flex-1 flex flex-col items-center justify-center px-8 text-center gap-4">
-          <div style={{ width: '14px', height: '24px', borderRadius: '8px', border: '1px solid var(--border-2)' }}>
-            <div style={{ position: 'relative', top: '48%', height: '1px', background: 'var(--border)' }} />
+        <div className="flex-1 flex flex-col items-center justify-center px-8 text-center gap-6">
+          {/* empty story ring placeholder */}
+          <div style={{
+            width: '80px', height: '80px', borderRadius: '50%',
+            background: 'rgba(240,230,208,0.03)',
+            border: '1.5px dashed rgba(240,230,208,0.1)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            <div style={{
+              width: '16px', height: '26px', borderRadius: '9px',
+              border: '1px solid rgba(240,230,208,0.15)',
+              position: 'relative',
+            }}>
+              <div style={{ position: 'absolute', top: '46%', left: 0, right: 0, height: '1px', background: 'rgba(240,230,208,0.1)' }} />
+            </div>
           </div>
-          <p className="text-sm" style={{ color: 'var(--text-2)' }}>No capsules yet.</p>
-          <Link href="/" className="text-xs tracking-[0.1em] px-6 py-3 rounded-full mt-2" style={{ border: '1px solid var(--border-2)', color: 'var(--text-2)' }}>
-            Take your first capsule
-          </Link>
+          <div>
+            <p className="text-sm mb-3" style={{ color: 'var(--text-2)' }}>No capsules yet.</p>
+            <Link href="/" className="text-xs tracking-[0.08em] px-6 py-3 rounded-full" style={{
+              background: 'rgba(201,169,110,0.1)',
+              color: 'var(--gold)',
+              border: '1px solid rgba(201,169,110,0.2)',
+            }}>
+              Take your first capsule
+            </Link>
+          </div>
         </div>
       ) : (
-        <div className="flex-1 px-8 pt-6 no-scrollbar overflow-auto">
-          {groups.map(([city, caps], gi) => (
-            <div key={city} className="mb-10 fade-up" style={{ animationDelay: `${gi * 0.06}s` }}>
-              {/* city header */}
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-2 h-2 rounded-full" style={{ background: 'var(--gold)', flexShrink: 0, boxShadow: '0 0 8px rgba(201,169,110,0.5)' }} />
-                <p className="text-base font-light" style={{ fontFamily: 'var(--font-fraunces)' }}>{city}</p>
-                <div className="flex-1 h-px" style={{ background: 'var(--border)' }} />
-              </div>
+        <>
+          {/* ── Stories row ── */}
+          <div className="flex gap-4 px-6 pb-6 no-scrollbar overflow-x-auto" style={{ borderBottom: '1px solid rgba(240,230,208,0.06)' }}>
+            {capsules.map((c, i) => (
+              <CapsuleStoryRing key={c.id} capsule={c} index={i} />
+            ))}
+          </div>
 
-              {/* timeline */}
-              <div className="pl-4" style={{ borderLeft: '1px solid var(--border)', marginLeft: '3px' }}>
-                {caps.map((c) => {
-                  const days = daysUntil(c.opensAt)
-                  const isOpen   = !!c.sealedAt && days <= 0
-                  const isSealed = !!c.sealedAt && days > 0
+          {/* ── Feed ── */}
+          <div className="flex-1 px-5 pt-5 no-scrollbar overflow-auto">
+            {groups.map(([city, caps], gi) => (
+              <div key={city} className="mb-8 fade-up" style={{ animationDelay: `${gi * 0.06}s` }}>
 
-                  return (
-                    <Link
-                      key={c.id}
-                      href={`/capsules/${c.id}`}
-                      className="flex gap-4 mb-6 last:mb-0 group"
-                    >
-                      {/* timeline dot */}
-                      <div className="flex flex-col items-center" style={{ marginLeft: '-5px', marginTop: '4px' }}>
-                        <div style={{
-                          width: '9px', height: '9px', borderRadius: '50%', flexShrink: 0,
-                          border: `1px solid ${isOpen ? 'var(--gold)' : 'var(--border-2)'}`,
-                          background: isOpen ? 'var(--gold)' : 'var(--bg)',
-                          boxShadow: isOpen ? '0 0 8px rgba(201,169,110,0.5)' : 'none',
-                        }} />
-                      </div>
+                {/* city label */}
+                <div className="flex items-center gap-2 mb-4 px-1">
+                  <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--gold)', boxShadow: '0 0 8px rgba(201,169,110,0.5)', flexShrink: 0 }} />
+                  <span className="text-sm font-light" style={{ fontFamily: 'var(--font-fraunces)' }}>{city}</span>
+                </div>
 
-                      {/* card */}
-                      <div className="flex-1 rounded-xl p-4 transition-all duration-200" style={{
-                        background: 'var(--surface)',
-                        border: `1px solid ${isOpen ? 'var(--border-2)' : 'var(--border)'}`,
+                {/* capsule cards */}
+                <div className="flex flex-col gap-3">
+                  {caps.map(c => {
+                    const days   = daysUntil(c.opensAt)
+                    const isOpen = !!c.sealedAt && days <= 0
+                    const isSealed = !!c.sealedAt && days > 0
+
+                    return (
+                      <Link key={c.id} href={`/capsules/${c.id}`} className="block rounded-2xl overflow-hidden transition-all active:scale-[0.98]" style={{
+                        background: 'rgba(240,230,208,0.03)',
+                        border: `1px solid ${isOpen ? 'rgba(201,169,110,0.2)' : 'rgba(240,230,208,0.06)'}`,
                       }}>
-                        <div className="flex items-start justify-between mb-3">
-                          <div>
-                            <p className="text-sm font-light">{fmtDate(c.createdAt)}</p>
+                        <div className="flex items-center gap-4 p-4">
+                          {/* mini story ring */}
+                          <div className={isOpen ? 'story-ring' : 'story-ring-dim'} style={{ width: '44px', height: '44px', flexShrink: 0 }}>
+                            <div className={isOpen ? 'story-ring-inner' : 'story-ring-dim-inner'} style={{ width: '39px', height: '39px' }}>
+                              <div style={{
+                                width: '33px', height: '33px', borderRadius: '50%',
+                                background: 'var(--surface)',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              }}>
+                                <div style={{
+                                  width: '8px', height: '14px', borderRadius: '4px',
+                                  border: `1px solid ${isOpen ? 'var(--gold)' : 'rgba(240,230,208,0.2)'}`,
+                                  position: 'relative',
+                                }}>
+                                  <div style={{
+                                    position: 'absolute', top: '46%', left: 0, right: 0, height: '1px',
+                                    background: isOpen ? 'var(--gold-dim)' : 'rgba(240,230,208,0.1)',
+                                  }} />
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* text */}
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-light">{fmtDateLong(c.createdAt)}</p>
                             {c.members.length > 0 && (
                               <p className="text-xs mt-0.5" style={{ color: 'var(--text-2)' }}>
                                 +{c.members.length} {c.members.length === 1 ? 'person' : 'people'}
                               </p>
                             )}
                           </div>
+
+                          {/* status badge */}
                           {isSealed && (
-                            <span className="text-[9px] tracking-[0.12em] uppercase px-2 py-1 rounded-full" style={{ border: '1px solid var(--border-2)', color: 'var(--text-3)' }}>
-                              {days}d
-                            </span>
+                            <span style={{
+                              fontSize: '11px', color: 'var(--text-3)',
+                              background: 'rgba(240,230,208,0.05)',
+                              padding: '4px 10px', borderRadius: '20px',
+                              flexShrink: 0,
+                            }}>{days}d</span>
                           )}
                           {isOpen && (
-                            <span className="text-[9px] tracking-[0.12em] uppercase px-2 py-1 rounded-full" style={{
-                              border: '1px solid rgba(201,169,110,0.3)',
+                            <span style={{
+                              fontSize: '11px', color: 'var(--gold)',
                               background: 'rgba(201,169,110,0.08)',
-                              color: 'var(--gold)',
+                              padding: '4px 10px', borderRadius: '20px',
+                              flexShrink: 0,
                             }}>Open</span>
                           )}
                           {!c.sealedAt && (
-                            <span className="text-[9px] tracking-[0.12em] uppercase" style={{ color: 'var(--text-3)' }}>Draft</span>
+                            <span style={{ fontSize: '11px', color: 'var(--text-3)' }}>Draft</span>
                           )}
                         </div>
 
-                        {/* media preview strip */}
-                        <div className="flex gap-2">
-                          {['◉', '□', '▶'].map((icon, j) => (
-                            <div key={j} className="rounded-lg flex items-center justify-center" style={{
-                              width: '36px', height: '36px',
-                              background: 'var(--bg)',
-                              border: '1px solid var(--border)',
-                              fontSize: '11px', color: 'var(--text-3)',
-                              filter: isOpen ? 'none' : 'blur(0px)',
-                            }}>
-                              {isOpen ? icon : '·'}
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </Link>
-                  )
-                })}
+                        {/* media strip — only shown if open */}
+                        {isOpen && (
+                          <div className="flex gap-2 px-4 pb-4">
+                            {[{ icon: '◉', label: 'voice' }, { icon: '□', label: 'photo' }, { icon: '▶', label: 'video' }].map(({ icon, label }) => (
+                              <div key={label} className="flex-1 rounded-xl flex items-center justify-center gap-1.5" style={{
+                                height: '40px',
+                                background: 'rgba(240,230,208,0.04)',
+                                border: '1px solid rgba(240,230,208,0.07)',
+                              }}>
+                                <span style={{ fontSize: '11px', color: 'var(--gold)', opacity: 0.7 }}>{icon}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </Link>
+                    )
+                  })}
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        </>
       )}
 
       <Navbar active="capsules" />
