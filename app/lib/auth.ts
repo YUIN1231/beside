@@ -1,0 +1,10 @@
+import { useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { isAuthenticated } from './storage'
+
+export function useRequireAuth() {
+  const router = useRouter()
+  useEffect(() => {
+    if (!isAuthenticated()) router.replace('/auth')
+  }, [router])
+}

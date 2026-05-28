@@ -1,7 +1,6 @@
 'use client'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { markOnboarded } from '../lib/storage'
 
 const SLIDES = [
   {
@@ -30,8 +29,7 @@ export default function Onboarding() {
     if (slide < SLIDES.length - 1) {
       setSlide(s => s + 1)
     } else {
-      markOnboarded()
-      router.replace('/')
+      router.replace('/auth')
     }
   }
 
@@ -140,15 +138,6 @@ export default function Onboarding() {
         >
           {slide < SLIDES.length - 1 ? 'Next' : 'Get started'}
         </button>
-        {slide < SLIDES.length - 1 && (
-          <button
-            onClick={() => { markOnboarded(); router.replace('/') }}
-            className="text-xs tracking-[0.15em]"
-            style={{ color: 'var(--text-3)' }}
-          >
-            Skip
-          </button>
-        )}
       </div>
     </main>
   )

@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation'
 import Navbar from './components/Navbar'
 import Waveform from './components/Waveform'
 import {
-  isOnboarded, getActiveSealedCapsule, getReadyCapsule,
+  isAuthenticated, getActiveSealedCapsule, getReadyCapsule,
   hasCapsuledThisMonth, saveCapsule, getUser,
 } from './lib/storage'
 import { reverseGeocode } from './lib/supabase'
@@ -63,7 +63,7 @@ export default function Home() {
 
   /* ── init ── */
   useEffect(() => {
-    if (!isOnboarded()) { router.replace('/onboarding'); return }
+    if (!isAuthenticated()) { router.replace('/auth'); return }
     setMonthlyUsed(hasCapsuledThisMonth())
     const ready  = getReadyCapsule()
     const sealed = getActiveSealedCapsule()
@@ -750,6 +750,7 @@ export default function Home() {
 
 /* ── Shared sub-components ─────────────────────────────────────────── */
 function Header({ showAccount }: { showAccount?: boolean }) {
+  const initial = getUser()?.name?.[0]?.toUpperCase() ?? '?'
   return (
     <div className="flex items-center justify-between px-6 pt-14 pb-6">
       <div className="w-8" />
@@ -760,7 +761,7 @@ function Header({ showAccount }: { showAccount?: boolean }) {
       }}>beside</span>
       {showAccount
         ? <a href="/account" className="w-8 h-8 rounded-full flex items-center justify-center text-[10px]"
-            style={{ background: 'rgba(201,169,110,0.1)', color: 'var(--gold)' }}>Y</a>
+            style={{ background: 'rgba(201,169,110,0.1)', color: 'var(--gold)' }}>{initial}</a>
         : <div className="w-8" />}
     </div>
   )

@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import Navbar from '../components/Navbar'
 import { getCapsules } from '../lib/storage'
+import { useRequireAuth } from '../lib/auth'
 import type { Capsule } from '../lib/types'
 
 function daysUntil(iso?: string) {
@@ -11,6 +12,7 @@ function daysUntil(iso?: string) {
 }
 
 export default function Map() {
+  useRequireAuth()
   const [capsules, setCapsules] = useState<Capsule[]>([])
   useEffect(() => { setCapsules(getCapsules()) }, [])
 

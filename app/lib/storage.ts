@@ -32,6 +32,12 @@ export function saveCapsule(capsule: Capsule) {
   localStorage.setItem(KEY.capsules, JSON.stringify(all))
 }
 
+export function isAuthenticated(): boolean {
+  if (!isBrowser()) return false
+  const user = getUser()
+  return !!(user?.email && user?.name)
+}
+
 export function isOnboarded(): boolean {
   if (!isBrowser()) return false
   return !!localStorage.getItem(KEY.onboarded)
@@ -39,6 +45,12 @@ export function isOnboarded(): boolean {
 
 export function markOnboarded() {
   localStorage.setItem(KEY.onboarded, '1')
+}
+
+export function signOut() {
+  localStorage.removeItem(KEY.user)
+  localStorage.removeItem(KEY.capsules)
+  localStorage.removeItem(KEY.onboarded)
 }
 
 /** Returns the sealed capsule that hasn't opened yet, if any */

@@ -2,6 +2,7 @@
 import { useParams, useRouter } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 import { getCapsules, saveCapsule } from '../../lib/storage'
+import { useRequireAuth } from '../../lib/auth'
 import type { Capsule } from '../../lib/types'
 
 function fmtDate(iso: string) {
@@ -11,6 +12,7 @@ function fmtDate(iso: string) {
 type UnlockStep = 'dark' | 'rising' | 'opening' | 'audio' | 'photo' | 'video' | 'people' | 'done'
 
 export default function CapsuleDetail() {
+  useRequireAuth()
   const { id }   = useParams<{ id: string }>()
   const router   = useRouter()
   const [cap, setCap]     = useState<Capsule | null>(null)

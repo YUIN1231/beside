@@ -1,10 +1,14 @@
 'use client'
 import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import Navbar from '../components/Navbar'
-import { getUser, getCapsules } from '../lib/storage'
+import { getUser, getCapsules, signOut } from '../lib/storage'
+import { useRequireAuth } from '../lib/auth'
 import type { User, Capsule, Member } from '../lib/types'
 
 export default function Account() {
+  useRequireAuth()
+  const router = useRouter()
   const [user, setUser]       = useState<User | null>(null)
   const [capsules, setCapsules] = useState<Capsule[]>([])
 
@@ -135,9 +139,10 @@ export default function Account() {
             </svg>
           </div>
         ))}
-        <div className="py-5" style={{ borderBottom: '1px solid rgba(240,230,208,0.05)' }}>
+        <button className="w-full text-left py-5" style={{ borderBottom: '1px solid rgba(240,230,208,0.05)' }}
+          onClick={() => { signOut(); router.replace('/auth') }}>
           <p className="text-sm font-light" style={{ color: 'var(--gold)' }}>Sign out</p>
-        </div>
+        </button>
         <div className="py-5">
           <p className="text-xs" style={{ color: 'rgba(240,230,208,0.18)' }}>Delete account</p>
         </div>
