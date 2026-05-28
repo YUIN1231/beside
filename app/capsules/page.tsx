@@ -157,7 +157,7 @@ export default function Capsules() {
                 {/* city label */}
                 <div className="flex items-center gap-2 mb-4 px-1">
                   <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--gold)', boxShadow: '0 0 8px rgba(201,169,110,0.5)', flexShrink: 0 }} />
-                  <span className="text-sm font-light" style={{ fontFamily: 'var(--font-fraunces)' }}>{city}</span>
+                  <span className="text-sm font-medium" style={{ fontFamily: 'var(--font-fraunces)' }}>{city}</span>
                 </div>
 
                 {/* capsule cards */}
@@ -169,8 +169,13 @@ export default function Capsules() {
 
                     return (
                       <Link key={c.id} href={`/capsules/${c.id}`} className="block rounded-2xl overflow-hidden transition-all active:scale-[0.98]" style={{
-                        background: 'rgba(240,230,208,0.03)',
-                        border: `1px solid ${isOpen ? 'rgba(201,169,110,0.2)' : 'rgba(240,230,208,0.06)'}`,
+                        background: isOpen
+                          ? 'linear-gradient(180deg, rgba(201,169,110,0.09) 0%, rgba(201,169,110,0.03) 100%)'
+                          : 'linear-gradient(180deg, rgba(240,230,208,0.07) 0%, rgba(240,230,208,0.025) 100%)',
+                        border: `1px solid ${isOpen ? 'rgba(201,169,110,0.22)' : 'rgba(240,230,208,0.1)'}`,
+                        boxShadow: isOpen
+                          ? '0 4px 20px rgba(0,0,0,0.25), inset 0 1px 0 rgba(201,169,110,0.1)'
+                          : '0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(240,230,208,0.06)',
                       }}>
                         <div className="flex items-center gap-4 p-4">
                           {/* mini story ring */}
@@ -197,7 +202,7 @@ export default function Capsules() {
 
                           {/* text */}
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-light">{fmtDateLong(c.createdAt)}</p>
+                            <p className="text-sm font-medium">{fmtDateLong(c.createdAt)}</p>
                             {c.members.length > 0 && (
                               <p className="text-xs mt-0.5" style={{ color: 'var(--text-2)' }}>
                                 +{c.members.length} {c.members.length === 1 ? 'person' : 'people'}
@@ -233,8 +238,8 @@ export default function Capsules() {
                             {[{ icon: '◉', label: 'voice' }, { icon: '□', label: 'photo' }, { icon: '▶', label: 'video' }].map(({ icon, label }) => (
                               <div key={label} className="flex-1 rounded-xl flex items-center justify-center gap-1.5" style={{
                                 height: '40px',
-                                background: 'rgba(240,230,208,0.04)',
-                                border: '1px solid rgba(240,230,208,0.07)',
+                                background: 'rgba(240,230,208,0.06)',
+                                border: '1px solid rgba(240,230,208,0.1)',
                               }}>
                                 <span style={{ fontSize: '11px', color: 'var(--gold)', opacity: 0.7 }}>{icon}</span>
                               </div>

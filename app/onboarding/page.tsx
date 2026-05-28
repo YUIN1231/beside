@@ -111,7 +111,7 @@ export default function Onboarding() {
             {s.label}
           </p>
           <h1
-            className="text-[1.85rem] leading-snug font-light whitespace-pre-line"
+            className="text-[1.85rem] leading-snug whitespace-pre-line"
             style={{ fontFamily: 'var(--font-fraunces)', color: 'var(--text)' }}
           >
             {s.heading}

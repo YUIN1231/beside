@@ -45,7 +45,7 @@ export default function Auth() {
           <p className="text-[11px] tracking-[0.22em] uppercase mb-3" style={{ color: 'var(--gold-dim)' }}>
             Create account
           </p>
-          <h1 className="text-[2rem] font-light leading-snug" style={{ fontFamily: 'var(--font-fraunces)' }}>
+          <h1 className="text-[2rem] leading-snug" style={{ fontFamily: 'var(--font-fraunces)' }}>
             Who are you?
           </h1>
           <p className="text-sm mt-3 leading-relaxed" style={{ color: 'var(--text-2)' }}>

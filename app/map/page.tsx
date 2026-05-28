@@ -31,7 +31,7 @@ export default function Map() {
 
       <div className="px-6 pt-6 pb-4">
         <p className="text-[11px] tracking-[0.22em] uppercase mb-2" style={{ color: 'var(--gold-dim)' }}>Map</p>
-        <h2 className="text-2xl font-light" style={{ fontFamily: 'var(--font-fraunces)' }}>Where you've been.</h2>
+        <h2 className="text-2xl font-medium" style={{ fontFamily: 'var(--font-fraunces)' }}>Where you've been.</h2>
       </div>
 
       <div className="px-6 pt-4 flex flex-col">
@@ -42,7 +42,7 @@ export default function Map() {
             const days   = daysUntil(c.opensAt)
             const isOpen = !!c.sealedAt && days <= 0
             return (
-              <Link key={c.id} href={`/capsules/${c.id}`} className="flex items-start gap-5 mb-7 fade-up" style={{ animationDelay: `${i * 0.06}s` }}>
+              <Link key={c.id} href={`/capsules/${c.id}`} className="flex items-start gap-5 mb-6 fade-up" style={{ animationDelay: `${i * 0.06}s` }}>
                 <div className="flex flex-col items-center flex-shrink-0" style={{ width: '10px' }}>
                   <div style={{
                     width: '10px', height: '10px', borderRadius: '50%',
@@ -56,7 +56,7 @@ export default function Map() {
                 </div>
                 <div className="flex-1">
                   <div className="flex items-baseline justify-between mb-0.5">
-                    <p className="font-light text-base">{c.city}</p>
+                    <p className="text-base font-medium">{c.city}</p>
                     <span className="text-[10px]" style={{ color: isOpen ? 'var(--gold)' : 'var(--text-3)' }}>
                       {isOpen ? 'open' : `${days}d`}
                     </span>
@@ -73,8 +73,9 @@ export default function Map() {
       </div>
 
       <div className="mx-5 mt-4 p-5 rounded-2xl" style={{
-        background: 'rgba(240,230,208,0.03)',
-        border: '1px solid rgba(240,230,208,0.07)',
+        background: 'linear-gradient(180deg, rgba(240,230,208,0.07) 0%, rgba(240,230,208,0.03) 100%)',
+        border: '1px solid rgba(240,230,208,0.1)',
+        boxShadow: '0 4px 20px rgba(0,0,0,0.22), inset 0 1px 0 rgba(240,230,208,0.07)',
       }}>
         <p className="text-[10px] tracking-[0.18em] uppercase mb-2" style={{ color: 'var(--gold-dim)' }}>The rule</p>
         <p className="text-sm font-light leading-relaxed" style={{ fontFamily: 'var(--font-fraunces)' }}>

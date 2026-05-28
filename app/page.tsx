@@ -245,7 +245,7 @@ export default function Home() {
           </div>
           <div className="fade-up flex flex-col gap-3">
             <p className="text-[11px] tracking-[0.22em] uppercase" style={{ color: 'var(--gold-dim)' }}>Sealed</p>
-            <p className="text-[3.5rem] font-light leading-none" style={{ fontFamily: 'var(--font-fraunces)', color: 'var(--gold)' }}>{days}</p>
+            <p className="text-[3.5rem] leading-none" style={{ fontFamily: 'var(--font-fraunces)', color: 'var(--gold)' }}>{days}</p>
             <p className="text-sm" style={{ color: 'var(--text-2)' }}>days until it opens</p>
             <p className="text-xs mt-1" style={{ color: 'var(--text-3)' }}>{sealedCap.city}</p>
           </div>
@@ -274,7 +274,7 @@ export default function Home() {
           </div>
           <div className="fade-up flex flex-col gap-3">
             <p className="text-[11px] tracking-[0.22em] uppercase" style={{ color: 'var(--gold)' }}>Ready</p>
-            <h2 className="text-3xl font-light" style={{ fontFamily: 'var(--font-fraunces)' }}>Your capsule is open.</h2>
+            <h2 className="text-3xl" style={{ fontFamily: 'var(--font-fraunces)' }}>Your capsule is open.</h2>
             <p className="text-sm" style={{ color: 'var(--text-2)' }}>{sealedCap.city}</p>
           </div>
           <button
@@ -324,7 +324,7 @@ export default function Home() {
               <p className="text-[11px] tracking-[0.22em] uppercase" style={{ color: 'var(--gold-dim)' }}>
                 {geo?.city ?? '···'} · {new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
               </p>
-              <h1 className="text-[2.2rem] leading-[1.2] font-light" style={{ fontFamily: 'var(--font-fraunces)' }}>
+              <h1 className="text-[2.2rem] leading-[1.2]" style={{ fontFamily: 'var(--font-fraunces)' }}>
                 Who's beside you<br />tonight?
               </h1>
             </div>
@@ -354,7 +354,7 @@ export default function Home() {
           <StepHeader label="Voice" onBack={() => setStep('landing')} step={1} total={4} />
           <div className="flex-1 flex flex-col items-center justify-center px-8 gap-8">
             <div className="fade-up text-center">
-              <h2 className="text-3xl font-light mb-2" style={{ fontFamily: 'var(--font-fraunces)' }}>Say something.</h2>
+              <h2 className="text-3xl mb-2" style={{ fontFamily: 'var(--font-fraunces)' }}>Say something.</h2>
               <p className="text-sm" style={{ color: 'var(--text-2)' }}>One take. No edits.</p>
             </div>
 
@@ -424,7 +424,7 @@ export default function Home() {
           <StepHeader label="Photo" onBack={() => setStep('voice')} step={2} total={4} />
           <div className="flex-1 flex flex-col items-center justify-center px-8 gap-8">
             <div className="fade-up text-center">
-              <h2 className="text-3xl font-light mb-2" style={{ fontFamily: 'var(--font-fraunces)' }}>Who's beside you?</h2>
+              <h2 className="text-3xl mb-2" style={{ fontFamily: 'var(--font-fraunces)' }}>Who's beside you?</h2>
               <p className="text-sm" style={{ color: 'var(--text-2)' }}>One shot. Make it real.</p>
             </div>
 
@@ -509,7 +509,7 @@ export default function Home() {
           <StepHeader label="Video" onBack={() => setStep('photo')} step={3} total={4} />
           <div className="flex-1 flex flex-col items-center justify-center px-8 gap-8">
             <div className="fade-up text-center">
-              <h2 className="text-3xl font-light mb-2" style={{ fontFamily: 'var(--font-fraunces)' }}>Last one.</h2>
+              <h2 className="text-3xl mb-2" style={{ fontFamily: 'var(--font-fraunces)' }}>Last one.</h2>
               <p className="text-sm" style={{ color: 'var(--text-2)' }}>10 seconds. Just be here.</p>
             </div>
 
@@ -583,7 +583,7 @@ export default function Home() {
           <StepHeader label="Tag" onBack={() => setStep('video')} step={4} total={4} />
           <div className="flex-1 flex flex-col px-8 pt-10 gap-8">
             <div className="fade-up">
-              <h2 className="text-3xl font-light mb-2" style={{ fontFamily: 'var(--font-fraunces)' }}>Who was there?</h2>
+              <h2 className="text-3xl mb-2" style={{ fontFamily: 'var(--font-fraunces)' }}>Who was there?</h2>
               <p className="text-sm leading-relaxed" style={{ color: 'var(--text-2)' }}>
                 Only people at the same place, within 15 minutes.<br />They'll get a location check to confirm.
               </p>
@@ -639,7 +639,7 @@ export default function Home() {
         <div className="min-h-screen flex flex-col items-center justify-center px-8 text-center gap-10">
           <div className="fade-up">
             <p className="text-xs tracking-[0.25em] uppercase mb-4" style={{ color: 'var(--gold-dim)' }}>Seal</p>
-            <h2 className="text-3xl font-light mb-3" style={{ fontFamily: 'var(--font-fraunces)' }}>Hold to seal.</h2>
+            <h2 className="text-3xl mb-3" style={{ fontFamily: 'var(--font-fraunces)' }}>Hold to seal.</h2>
             <p className="text-sm leading-relaxed" style={{ color: 'var(--text-2)' }}>
               Hold for 3 seconds.<br />Cannot be undone.
             </p>
@@ -700,7 +700,7 @@ export default function Home() {
         <div className="min-h-screen flex flex-col items-center justify-center px-8 text-center gap-8">
           <div className="sealed-text text-xs tracking-[0.35em] uppercase" style={{ color: 'var(--gold)' }}>Sealed</div>
           <div className="fade-up flex flex-col gap-2">
-            <h2 className="text-4xl font-light" style={{ fontFamily: 'var(--font-fraunces)' }}>
+            <h2 className="text-4xl" style={{ fontFamily: 'var(--font-fraunces)' }}>
               See you in<br />1 month.
             </h2>
           </div>

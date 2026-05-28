@@ -26,7 +26,7 @@ export default function Guide() {
 
       <div className="px-6 pt-6 pb-2">
         <p className="text-[11px] tracking-[0.22em] uppercase mb-2" style={{ color: 'var(--gold-dim)' }}>Guide</p>
-        <h2 className="text-2xl font-light" style={{ fontFamily: 'var(--font-fraunces)' }}>How it works.</h2>
+        <h2 className="text-2xl font-medium" style={{ fontFamily: 'var(--font-fraunces)' }}>How it works.</h2>
       </div>
 
       <div className="px-6 pt-6 flex flex-col">
@@ -38,7 +38,7 @@ export default function Guide() {
           }}>
             <span style={{ color: 'var(--text-3)', width: '20px', fontSize: '10px', flexShrink: 0, marginTop: '2px' }}>{s.n}</span>
             <div>
-              <p className="font-light mb-1" style={{ fontFamily: 'var(--font-fraunces)' }}>{s.title}</p>
+              <p className="font-medium mb-1" style={{ fontFamily: 'var(--font-fraunces)' }}>{s.title}</p>
               <p className="text-sm leading-relaxed" style={{ color: 'var(--text-2)' }}>{s.body}</p>
             </div>
           </div>
@@ -46,11 +46,12 @@ export default function Guide() {
       </div>
 
       <div className="mx-5 mt-8 p-5 rounded-2xl" style={{
-        background: 'rgba(240,230,208,0.03)',
-        border: '1px solid rgba(240,230,208,0.07)',
+        background: 'linear-gradient(180deg, rgba(240,230,208,0.07) 0%, rgba(240,230,208,0.03) 100%)',
+        border: '1px solid rgba(240,230,208,0.1)',
+        boxShadow: '0 4px 20px rgba(0,0,0,0.22), inset 0 1px 0 rgba(240,230,208,0.07)',
       }}>
         <p className="text-[10px] tracking-[0.18em] uppercase mb-2" style={{ color: 'var(--gold-dim)' }}>The idea</p>
-        <p className="text-sm font-light leading-relaxed" style={{ fontFamily: 'var(--font-fraunces)' }}>
+        <p className="text-sm leading-relaxed" style={{ fontFamily: 'var(--font-fraunces)' }}>
           Social media lets you follow anyone. beside lets you follow only the people who were actually beside you.
         </p>
       </div>

@@ -243,25 +243,25 @@ export default function CapsuleDetail() {
 
       <div className="px-8 flex flex-col gap-4">
         {cap.audioUrl && (
-          <div className="p-4 rounded-2xl" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+          <div className="p-4 rounded-2xl" style={{ background: 'linear-gradient(180deg, var(--surface-2) 0%, var(--surface) 100%)', border: '1px solid var(--border)', boxShadow: '0 4px 20px rgba(0,0,0,0.25), inset 0 1px 0 rgba(240,230,208,0.07)' }}>
             <p className="text-[10px] tracking-[0.2em] uppercase mb-3" style={{ color: 'var(--text-2)' }}>Voice</p>
             <audio ref={audioRef} src={cap.audioUrl} controls style={{ width: '100%', accentColor: 'var(--gold)' }} />
           </div>
         )}
         {cap.photoUrl && (
-          <div className="p-4 rounded-2xl" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+          <div className="p-4 rounded-2xl" style={{ background: 'linear-gradient(180deg, var(--surface-2) 0%, var(--surface) 100%)', border: '1px solid var(--border)', boxShadow: '0 4px 20px rgba(0,0,0,0.25), inset 0 1px 0 rgba(240,230,208,0.07)' }}>
             <p className="text-[10px] tracking-[0.2em] uppercase mb-3" style={{ color: 'var(--text-2)' }}>Photo</p>
             <img src={cap.photoUrl} className="w-full rounded-xl" style={{ aspectRatio: '1', objectFit: 'cover' }} alt="" />
           </div>
         )}
         {cap.videoUrl && (
-          <div className="p-4 rounded-2xl" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+          <div className="p-4 rounded-2xl" style={{ background: 'linear-gradient(180deg, var(--surface-2) 0%, var(--surface) 100%)', border: '1px solid var(--border)', boxShadow: '0 4px 20px rgba(0,0,0,0.25), inset 0 1px 0 rgba(240,230,208,0.07)' }}>
             <p className="text-[10px] tracking-[0.2em] uppercase mb-3" style={{ color: 'var(--text-2)' }}>Video</p>
             <video src={cap.videoUrl} controls className="w-full rounded-xl" style={{ aspectRatio: '1', objectFit: 'cover' }} />
           </div>
         )}
         {cap.members.length > 0 && (
-          <div className="p-4 rounded-2xl" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+          <div className="p-4 rounded-2xl" style={{ background: 'linear-gradient(180deg, var(--surface-2) 0%, var(--surface) 100%)', border: '1px solid var(--border)', boxShadow: '0 4px 20px rgba(0,0,0,0.25), inset 0 1px 0 rgba(240,230,208,0.07)' }}>
             <p className="text-[10px] tracking-[0.2em] uppercase mb-3" style={{ color: 'var(--text-2)' }}>Who was there</p>
             <div className="flex flex-col gap-2">
               {cap.members.map((m, i) => (
