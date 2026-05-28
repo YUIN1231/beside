@@ -27,12 +27,13 @@ body {
 
 /* ── Story ring ── */
 .story-ring {
-  background: linear-gradient(135deg, #e8c98a 0%, #c9a96e 50%, #7a5428 100%);
-  padding: 2px;
+  background: linear-gradient(145deg, #f0d898 0%, #c9a96e 50%, #8a5c28 100%);
+  padding: 2.5px;
   border-radius: 50%;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  box-shadow: 0 4px 18px rgba(201,169,110,0.25), 0 1px 4px rgba(0,0,0,0.4);
 }
 .story-ring-inner {
   background: var(--bg);
@@ -43,12 +44,13 @@ body {
   justify-content: center;
 }
 .story-ring-dim {
-  background: rgba(240, 230, 208, 0.1);
+  background: linear-gradient(145deg, rgba(240,230,208,0.18) 0%, rgba(240,230,208,0.07) 100%);
   padding: 2px;
   border-radius: 50%;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
 }
 .story-ring-dim-inner {
   background: var(--bg);
@@ -58,6 +60,23 @@ body {
   align-items: center;
   justify-content: center;
 }
+
+/* ── Depth card ── */
+.card {
+  background: linear-gradient(180deg, rgba(240,230,208,0.07) 0%, rgba(240,230,208,0.025) 100%);
+  border: 1px solid rgba(240,230,208,0.1);
+  border-radius: 20px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.25), inset 0 1px 0 rgba(240,230,208,0.07);
+}
+
+/* ── Gold button ── */
+.btn-gold {
+  background: linear-gradient(145deg, #f0d898 0%, #c9a96e 60%, #b08040 100%);
+  color: #0f0a05;
+  font-weight: 600;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.28), 0 6px 28px rgba(201,169,110,0.3), 0 2px 6px rgba(0,0,0,0.25);
+}
+.btn-gold:active { transform: scale(0.97); }
 
 /* ── Glassmorphism ── */
 .glass {

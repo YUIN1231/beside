@@ -39,6 +39,7 @@ export default function Home() {
   const [camStream,    setCamStream]    = useState<MediaStream | null>(null)
   const [photoUrl,     setPhotoUrl]     = useState<string | null>(null)
   const [developing,   setDeveloping]   = useState(false)
+  const [camFacing,    setCamFacing]    = useState<'environment'|'user'>('environment')
   const videoRef     = useRef<HTMLVideoElement | null>(null)
   const canvasRef    = useRef<HTMLCanvasElement | null>(null)
 
@@ -47,6 +48,7 @@ export default function Home() {
   const [vidRecording, setVidRecording] = useState(false)
   const [videoBlob,    setVideoBlob]    = useState<Blob | null>(null)
   const [vidProgress,  setVidProgress]  = useState(0)
+  const [vidFacing,    setVidFacing]    = useState<'environment'|'user'>('environment')
   const vidRef       = useRef<HTMLVideoElement | null>(null)
   const vidRecRef    = useRef<MediaRecorder | null>(null)
   const vidChunks    = useRef<Blob[]>([])
@@ -113,10 +115,13 @@ export default function Home() {
   const handleWaveSnap = useCallback((d: number[]) => { setWaveSnap(d) }, [])
 
   /* ── photo ── */
-  const openCamera = async () => {
-    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false })
+  const openCamera = async (facing: 'environment'|'user' = camFacing) => {
+    camStream?.getTracks().forEach(t => t.stop())
+    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: facing }, audio: false })
     setCamStream(stream)
+    setCamFacing(facing)
   }
+  const flipCamera = () => openCamera(camFacing === 'environment' ? 'user' : 'environment')
   const takePhoto = () => {
     if (!videoRef.current || !canvasRef.current) return
     const cv = canvasRef.current
@@ -133,7 +138,7 @@ export default function Home() {
 
   /* ── video ── */
   const startVideo = async () => {
-    const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: vidFacing }, audio: true })
     setVidStream(stream)
     const mr = new MediaRecorder(stream)
     vidRecRef.current = mr
@@ -333,12 +338,7 @@ export default function Home() {
             ) : (
               <button
                 onClick={() => setStep('voice')}
-                className="fade-up-3 text-sm tracking-[0.06em] px-10 py-3.5 rounded-full transition-all duration-300 active:scale-95"
-                style={{
-                  background: 'linear-gradient(135deg, #e8c98a 0%, #c9a96e 100%)',
-                  color: '#0f0a05', fontWeight: 600,
-                  boxShadow: '0 4px 24px rgba(201,169,110,0.25)',
-                }}
+                className="fade-up-3 text-sm tracking-[0.06em] px-10 py-3.5 rounded-full transition-all duration-300 active:scale-95 btn-gold"
               >
                 Take a capsule
               </button>
@@ -429,7 +429,7 @@ export default function Home() {
             </div>
 
             {!camStream && !photoUrl && (
-              <button onClick={openCamera} className="relative rounded-2xl overflow-hidden active:scale-95 transition-all" style={{
+              <button onClick={() => openCamera()} className="relative rounded-2xl overflow-hidden active:scale-95 transition-all" style={{
                 width: '260px', height: '260px',
                 border: '1px solid var(--border-2)',
                 background: 'var(--surface)',
@@ -458,9 +458,29 @@ export default function Home() {
                     <div style={{ position: 'absolute', top: '50%', left: '16px', right: '16px', height: '1px', background: 'rgba(201,169,110,0.08)' }} />
                     <div style={{ position: 'absolute', left: '50%', top: '16px', bottom: '16px', width: '1px', background: 'rgba(201,169,110,0.08)' }} />
                   </div>
+                  {/* flip button */}
+                  <button onClick={flipCamera} style={{
+                    position: 'absolute', top: '12px', right: '12px',
+                    width: '36px', height: '36px', borderRadius: '50%',
+                    background: 'rgba(0,0,0,0.45)',
+                    backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)',
+                    border: '1px solid rgba(255,255,255,0.18)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+                  }}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M1 4v6h6"/><path d="M23 20v-6h-6"/>
+                      <path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4-4.64 4.36A9 9 0 0 1 3.51 15"/>
+                    </svg>
+                  </button>
                 </div>
-                <button onClick={takePhoto} className="rounded-full flex items-center justify-center transition-all active:scale-90" style={{ width: '60px', height: '60px', border: '1px solid var(--gold)', background: 'rgba(201,169,110,0.08)' }}>
-                  <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--gold)' }} />
+                <button onClick={takePhoto} className="rounded-full flex items-center justify-center transition-all active:scale-90" style={{
+                  width: '60px', height: '60px',
+                  background: 'linear-gradient(145deg, rgba(201,169,110,0.18) 0%, rgba(201,169,110,0.06) 100%)',
+                  border: '1.5px solid var(--gold)',
+                  boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.15), 0 3px 12px rgba(0,0,0,0.3)',
+                }}>
+                  <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--gold)', boxShadow: '0 0 8px rgba(201,169,110,0.6)' }} />
                 </button>
               </div>
             )}
@@ -494,13 +514,27 @@ export default function Home() {
             </div>
 
             {!vidStream && !videoBlob && (
-              <button onClick={startVideo} className="rounded-full flex items-center justify-center transition-all active:scale-90" style={{
-                width: '90px', height: '90px',
-                border: '1px solid var(--border-2)',
-                background: 'var(--surface)',
-              }}>
-                <div className="vid-pulse" style={{ width: '16px', height: '16px', borderRadius: '50%', background: 'var(--gold)' }} />
-              </button>
+              <div className="flex flex-col items-center gap-5">
+                <button onClick={startVideo} className="rounded-full flex items-center justify-center transition-all active:scale-90" style={{
+                  width: '90px', height: '90px',
+                  background: 'linear-gradient(145deg, rgba(240,230,208,0.08) 0%, rgba(240,230,208,0.03) 100%)',
+                  border: '1.5px solid rgba(240,230,208,0.18)',
+                  boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.06), 0 4px 16px rgba(0,0,0,0.3)',
+                }}>
+                  <div className="vid-pulse" style={{ width: '16px', height: '16px', borderRadius: '50%', background: 'var(--gold)', boxShadow: '0 0 10px rgba(201,169,110,0.5)' }} />
+                </button>
+                {/* camera flip */}
+                <button onClick={() => setVidFacing(f => f === 'environment' ? 'user' : 'environment')}
+                  className="flex items-center gap-2 transition-all active:scale-95"
+                  style={{ color: 'var(--text-3)', fontSize: '12px' }}
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M1 4v6h6"/><path d="M23 20v-6h-6"/>
+                    <path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4-4.64 4.36A9 9 0 0 1 3.51 15"/>
+                  </svg>
+                  {vidFacing === 'environment' ? 'Back' : 'Front'} camera
+                </button>
+              </div>
             )}
 
             {vidStream && (
@@ -761,13 +795,19 @@ function Pill({ gold }: { gold?: boolean }) {
   return (
     <div style={{
       width: '18px', height: '30px', borderRadius: '10px',
-      border: `1px solid ${gold ? 'var(--gold)' : 'var(--border-2)'}`,
-      background: gold ? 'rgba(201,169,110,0.1)' : 'transparent',
-      position: 'relative', overflow: 'hidden',
+      border: `1.5px solid ${gold ? '#c9a96e' : 'rgba(240,230,208,0.28)'}`,
+      background: gold
+        ? 'linear-gradient(180deg, rgba(201,169,110,0.22) 0%, rgba(201,169,110,0.07) 100%)'
+        : 'linear-gradient(180deg, rgba(240,230,208,0.07) 0%, rgba(240,230,208,0.02) 100%)',
+      boxShadow: gold
+        ? 'inset 0 1px 0 rgba(255,255,255,0.22), 0 3px 10px rgba(0,0,0,0.35)'
+        : 'inset 0 1px 0 rgba(255,255,255,0.06)',
+      position: 'relative',
     }}>
       <div style={{
-        position: 'absolute', top: '46%', left: 0, right: 0,
-        height: '1px', background: gold ? 'var(--gold-dim)' : 'var(--border)',
+        position: 'absolute', top: '46%', left: '2px', right: '2px',
+        height: '1px',
+        background: gold ? 'rgba(201,169,110,0.4)' : 'rgba(240,230,208,0.12)',
       }} />
     </div>
   )
