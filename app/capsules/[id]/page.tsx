@@ -1,9 +1,10 @@
-'use client'
+﻿'use client'
 import { useParams, useRouter } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 import { getCapsules, saveCapsule } from '../../lib/storage'
 import { useRequireAuth } from '../../lib/auth'
 import { shareOrDownload } from '../../lib/shareImage'
+import { markCapsuleOpened } from '../../lib/supabase'
 import type { Capsule } from '../../lib/types'
 
 function fmtDate(iso: string) {
@@ -24,8 +25,8 @@ export default function CapsuleDetail() {
     const found = getCapsules().find(c => c.id === id) ?? null
     setCap(found)
     if (found?.sealedAt && found.opensAt && new Date(found.opensAt) <= new Date() && !found.opened) {
-      // mark opened
       saveCapsule({ ...found, opened: true })
+      markCapsuleOpened(found.id).catch(() => {})
       // begin reveal sequence
       const seq: [UnlockStep, number][] = [
         ['dark',    0],
@@ -66,7 +67,7 @@ export default function CapsuleDetail() {
         <div className="flex items-center justify-between px-8 pt-14 pb-8" style={{ borderBottom: '1px solid var(--border)' }}>
           <button onClick={() => router.back()} className="text-[10px] tracking-[0.2em] uppercase" style={{ color: 'var(--text-2)' }}>back</button>
           <span className="text-base font-light tracking-[0.4em]" style={{
-            fontFamily: 'var(--font-fraunces)',
+            fontFamily: 'var(--font-space)',
             background: 'linear-gradient(135deg, var(--gold-bright), var(--gold))',
             WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
           }}>beside</span>
@@ -85,7 +86,7 @@ export default function CapsuleDetail() {
           </div>
           <div className="fade-up flex flex-col gap-3">
             <p className="text-xs tracking-[0.2em] uppercase" style={{ color: 'var(--gold-dim)' }}>Sealed</p>
-            <p className="text-[4rem] font-light leading-none" style={{ fontFamily: 'var(--font-fraunces)', color: 'var(--gold)' }}>{daysLeft}</p>
+            <p className="text-[4rem] font-light leading-none" style={{ fontFamily: 'var(--font-space)', color: 'var(--gold)' }}>{daysLeft}</p>
             <p className="text-sm" style={{ color: 'var(--text-2)' }}>days until it opens</p>
             <p className="text-xs mt-1" style={{ color: 'var(--text-3)' }}>{cap.city} · {fmtDate(cap.createdAt)}</p>
           </div>
@@ -103,13 +104,13 @@ export default function CapsuleDetail() {
             onClick={() => shareOrDownload(cap)}
             className="flex items-center gap-2 px-6 py-3 rounded-full text-sm tracking-[0.06em] transition-all active:scale-95"
             style={{
-              background: 'linear-gradient(135deg, #e8c98a 0%, #c9a96e 100%)',
-              color: '#0f0a05', fontWeight: 600,
-              boxShadow: '0 4px 20px rgba(201,169,110,0.22)',
+              background: 'linear-gradient(135deg, #d4e0ff 0%, #b8c8f0 100%)',
+              color: '#06070d', fontWeight: 600,
+              boxShadow: '0 4px 20px rgba(184,200,240,0.22)',
             }}
           >
             <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
-              <path d="M8 1v9M4 5l4-4 4 4M2 11v3h12v-3" stroke="#0f0a05" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M8 1v9M4 5l4-4 4 4M2 11v3h12v-3" stroke="#06070d" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
             Share to Stories
           </button>
@@ -128,7 +129,7 @@ export default function CapsuleDetail() {
         {uStep === 'rising' && (
           <div className="unlock-rise text-center flex flex-col gap-3">
             <p className="text-xs tracking-[0.3em] uppercase" style={{ color: 'var(--gold-dim)' }}>{cap.city}</p>
-            <p className="text-lg font-light" style={{ fontFamily: 'var(--font-fraunces)', color: 'var(--text)' }}>{fmtDate(cap.createdAt)}</p>
+            <p className="text-lg font-light" style={{ fontFamily: 'var(--font-space)', color: 'var(--text)' }}>{fmtDate(cap.createdAt)}</p>
           </div>
         )}
         {uStep === 'opening' && (
@@ -139,23 +140,23 @@ export default function CapsuleDetail() {
               <div style={{
                 width: '70px', height: '40px', borderRadius: '40px 40px 0 0',
                 border: '1px solid var(--gold)',
-                background: 'linear-gradient(180deg, rgba(201,169,110,0.1) 0%, transparent 100%)',
+                background: 'linear-gradient(180deg, rgba(184,200,240,0.1) 0%, transparent 100%)',
                 animation: 'seal-top 0.8s cubic-bezier(0.4,0,0.2,1) forwards',
               }} />
               <div style={{
                 width: '70px', height: '40px', borderRadius: '0 0 40px 40px',
                 border: '1px solid var(--gold)',
-                background: 'linear-gradient(0deg, rgba(201,169,110,0.1) 0%, transparent 100%)',
+                background: 'linear-gradient(0deg, rgba(184,200,240,0.1) 0%, transparent 100%)',
                 animation: 'seal-bottom 0.8s cubic-bezier(0.4,0,0.2,1) forwards',
               }} />
             </div>
-            <p className="text-sm font-light" style={{ fontFamily: 'var(--font-fraunces)', color: 'var(--text)', opacity: 0.6 }}>Opening…</p>
+            <p className="text-sm font-light" style={{ fontFamily: 'var(--font-space)', color: 'var(--text)', opacity: 0.6 }}>Opening…</p>
           </div>
         )}
         {(uStep === 'audio') && (
           <div className="unlock-rise text-center flex flex-col gap-4">
             <p className="text-xs tracking-[0.3em] uppercase" style={{ color: 'var(--gold-dim)' }}>Voice</p>
-            <div className="w-20 h-20 rounded-full flex items-center justify-center mx-auto" style={{ border: '1px solid var(--gold)', background: 'rgba(201,169,110,0.08)' }}>
+            <div className="w-20 h-20 rounded-full flex items-center justify-center mx-auto" style={{ border: '1px solid var(--gold)', background: 'rgba(184,200,240,0.08)' }}>
               <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: 'var(--gold)', animation: 'gold-glow 2s ease infinite' }} />
             </div>
             {cap.audioUrl && <audio ref={audioRef} src={cap.audioUrl} />}
@@ -206,7 +207,7 @@ export default function CapsuleDetail() {
       <div className="flex items-center justify-between px-8 pt-14 pb-8" style={{ borderBottom: '1px solid var(--border)' }}>
         <button onClick={() => router.back()} className="text-[10px] tracking-[0.2em] uppercase" style={{ color: 'var(--text-2)' }}>back</button>
         <span className="text-base font-light tracking-[0.4em]" style={{
-          fontFamily: 'var(--font-fraunces)',
+          fontFamily: 'var(--font-space)',
           background: 'linear-gradient(135deg, var(--gold-bright), var(--gold))',
           WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
         }}>beside</span>
@@ -215,7 +216,7 @@ export default function CapsuleDetail() {
 
       <div className="px-8 pt-8 pb-6">
         <p className="text-xs tracking-[0.2em] uppercase mb-2" style={{ color: 'var(--gold-dim)' }}>{cap.city}</p>
-        <h2 className="text-2xl font-light" style={{ fontFamily: 'var(--font-fraunces)' }}>{fmtDate(cap.createdAt)}</h2>
+        <h2 className="text-2xl font-light" style={{ fontFamily: 'var(--font-space)' }}>{fmtDate(cap.createdAt)}</h2>
         {cap.members.length > 0 && (
           <div className="flex items-center gap-2 mt-3">
             {cap.members.slice(0, 5).map((m, i) => (
@@ -230,12 +231,12 @@ export default function CapsuleDetail() {
           onClick={() => shareOrDownload(cap)}
           className="flex items-center gap-2 px-5 py-2.5 rounded-full text-xs tracking-[0.06em] transition-all active:scale-95"
           style={{
-            background: 'linear-gradient(135deg, #e8c98a 0%, #c9a96e 100%)',
-            color: '#0f0a05', fontWeight: 600,
+            background: 'linear-gradient(135deg, #d4e0ff 0%, #b8c8f0 100%)',
+            color: '#06070d', fontWeight: 600,
           }}
         >
           <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
-            <path d="M8 1v9M4 5l4-4 4 4M2 11v3h12v-3" stroke="#0f0a05" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+            <path d="M8 1v9M4 5l4-4 4 4M2 11v3h12v-3" stroke="#06070d" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
           Share to Stories
         </button>
@@ -243,25 +244,25 @@ export default function CapsuleDetail() {
 
       <div className="px-8 flex flex-col gap-4">
         {cap.audioUrl && (
-          <div className="p-4 rounded-2xl" style={{ background: 'linear-gradient(180deg, var(--surface-2) 0%, var(--surface) 100%)', border: '1px solid var(--border)', boxShadow: '0 4px 20px rgba(0,0,0,0.25), inset 0 1px 0 rgba(240,230,208,0.07)' }}>
+          <div className="p-4 rounded-2xl" style={{ background: 'linear-gradient(180deg, var(--surface-2) 0%, var(--surface) 100%)', border: '1px solid var(--border)', boxShadow: '0 4px 20px rgba(0,0,0,0.25), inset 0 1px 0 rgba(30,26,20,0.07)' }}>
             <p className="text-[10px] tracking-[0.2em] uppercase mb-3" style={{ color: 'var(--text-2)' }}>Voice</p>
             <audio ref={audioRef} src={cap.audioUrl} controls style={{ width: '100%', accentColor: 'var(--gold)' }} />
           </div>
         )}
         {cap.photoUrl && (
-          <div className="p-4 rounded-2xl" style={{ background: 'linear-gradient(180deg, var(--surface-2) 0%, var(--surface) 100%)', border: '1px solid var(--border)', boxShadow: '0 4px 20px rgba(0,0,0,0.25), inset 0 1px 0 rgba(240,230,208,0.07)' }}>
+          <div className="p-4 rounded-2xl" style={{ background: 'linear-gradient(180deg, var(--surface-2) 0%, var(--surface) 100%)', border: '1px solid var(--border)', boxShadow: '0 4px 20px rgba(0,0,0,0.25), inset 0 1px 0 rgba(30,26,20,0.07)' }}>
             <p className="text-[10px] tracking-[0.2em] uppercase mb-3" style={{ color: 'var(--text-2)' }}>Photo</p>
             <img src={cap.photoUrl} className="w-full rounded-xl" style={{ aspectRatio: '1', objectFit: 'cover' }} alt="" />
           </div>
         )}
         {cap.videoUrl && (
-          <div className="p-4 rounded-2xl" style={{ background: 'linear-gradient(180deg, var(--surface-2) 0%, var(--surface) 100%)', border: '1px solid var(--border)', boxShadow: '0 4px 20px rgba(0,0,0,0.25), inset 0 1px 0 rgba(240,230,208,0.07)' }}>
+          <div className="p-4 rounded-2xl" style={{ background: 'linear-gradient(180deg, var(--surface-2) 0%, var(--surface) 100%)', border: '1px solid var(--border)', boxShadow: '0 4px 20px rgba(0,0,0,0.25), inset 0 1px 0 rgba(30,26,20,0.07)' }}>
             <p className="text-[10px] tracking-[0.2em] uppercase mb-3" style={{ color: 'var(--text-2)' }}>Video</p>
             <video src={cap.videoUrl} controls className="w-full rounded-xl" style={{ aspectRatio: '1', objectFit: 'cover' }} />
           </div>
         )}
         {cap.members.length > 0 && (
-          <div className="p-4 rounded-2xl" style={{ background: 'linear-gradient(180deg, var(--surface-2) 0%, var(--surface) 100%)', border: '1px solid var(--border)', boxShadow: '0 4px 20px rgba(0,0,0,0.25), inset 0 1px 0 rgba(240,230,208,0.07)' }}>
+          <div className="p-4 rounded-2xl" style={{ background: 'linear-gradient(180deg, var(--surface-2) 0%, var(--surface) 100%)', border: '1px solid var(--border)', boxShadow: '0 4px 20px rgba(0,0,0,0.25), inset 0 1px 0 rgba(30,26,20,0.07)' }}>
             <p className="text-[10px] tracking-[0.2em] uppercase mb-3" style={{ color: 'var(--text-2)' }}>Who was there</p>
             <div className="flex flex-col gap-2">
               {cap.members.map((m, i) => (

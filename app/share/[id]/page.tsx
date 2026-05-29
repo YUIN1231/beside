@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 import { Suspense, useState, useEffect } from 'react'
 import { useParams, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
@@ -32,9 +32,9 @@ function ShareCard() {
   return (
     <main style={{
       minHeight: '100svh',
-      background: 'radial-gradient(ellipse at 50% 38%, rgba(201,169,110,0.08) 0%, #0a0602 60%)',
-      backgroundColor: '#0a0602',
-      color: '#f0e6d0',
+      background: 'radial-gradient(ellipse at 50% 38%, rgba(184,200,240,0.06) 0%, #06070d 60%)',
+      backgroundColor: '#06070d',
+      color: '#e8eaf6',
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center',
@@ -47,10 +47,10 @@ function ShareCard() {
       {/* top wordmark */}
       <div style={{ paddingTop: '52px', textAlign: 'center' }}>
         <p style={{
-          fontFamily: 'Georgia, serif',
+          fontFamily: 'var(--font-space), system-ui, sans-serif',
           fontSize: '15px',
           letterSpacing: '0.42em',
-          background: 'linear-gradient(135deg, #e8c98a, #c9a96e)',
+          background: 'linear-gradient(135deg, #d4e0ff, #b8c8f0)',
           WebkitBackgroundClip: 'text',
           WebkitTextFillColor: 'transparent',
           fontWeight: 400,
@@ -65,7 +65,7 @@ function ShareCard() {
           {/* orbit ring */}
           <div style={{
             position: 'absolute', inset: 0, borderRadius: '50%',
-            border: '1px solid rgba(201,169,110,0.1)',
+            border: '1px solid rgba(184,200,240,0.1)',
           }} />
           {/* gradient arc SVG */}
           <svg style={{ position: 'absolute', inset: 0 }} width="200" height="200" viewBox="0 0 200 200" fill="none">
@@ -76,29 +76,29 @@ function ShareCard() {
             />
             <defs>
               <linearGradient id="arcG" x1="0" y1="0" x2="200" y2="200" gradientUnits="userSpaceOnUse">
-                <stop stopColor="#e8c98a" />
-                <stop offset="0.6" stopColor="#c9a96e" />
-                <stop offset="1" stopColor="rgba(201,169,110,0)" />
+                <stop stopColor="#d4e0ff" />
+                <stop offset="0.6" stopColor="#b8c8f0" />
+                <stop offset="1" stopColor="rgba(184,200,240,0)" />
               </linearGradient>
             </defs>
           </svg>
           {/* inner circle */}
           <div style={{
             position: 'absolute', inset: '8px', borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(201,169,110,0.07) 0%, #0a0602 70%)',
+            background: 'radial-gradient(circle, rgba(184,200,240,0.07) 0%, #06070d 70%)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}>
             {/* pill */}
             <div style={{
               width: '28px', height: '48px', borderRadius: '14px',
-              border: '1.5px solid #c9a96e',
-              background: 'linear-gradient(180deg, rgba(201,169,110,0.1) 0%, rgba(201,169,110,0.04) 100%)',
+              border: '1.5px solid #b8c8f0',
+              background: 'linear-gradient(180deg, rgba(184,200,240,0.1) 0%, rgba(184,200,240,0.04) 100%)',
               position: 'relative',
-              boxShadow: '0 0 24px rgba(201,169,110,0.15)',
+              boxShadow: '0 0 24px rgba(184,200,240,0.15)',
             }}>
               <div style={{
                 position: 'absolute', top: '46%', left: '4px', right: '4px',
-                height: '1px', background: 'rgba(201,169,110,0.35)',
+                height: '1px', background: 'rgba(184,200,240,0.35)',
               }} />
             </div>
           </div>
@@ -106,24 +106,24 @@ function ShareCard() {
 
         {/* text content */}
         <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '10px', maxWidth: '320px' }}>
-          <p style={{ fontSize: '11px', letterSpacing: '0.24em', color: 'rgba(201,169,110,0.5)', textTransform: 'uppercase' }}>
+          <p style={{ fontSize: '11px', letterSpacing: '0.24em', color: 'rgba(184,200,240,0.5)', textTransform: 'uppercase' }}>
             captured in
           </p>
           <h1 style={{
-            fontFamily: 'Georgia, serif',
+            fontFamily: 'var(--font-space), system-ui, sans-serif',
             fontSize: 'clamp(2rem, 8vw, 3rem)',
             fontWeight: 700,
             letterSpacing: '0.04em',
-            color: '#f0e6d0',
+            color: '#e8eaf6',
             lineHeight: 1.1,
           }}>
             {city}
           </h1>
           <p style={{
-            fontFamily: 'Georgia, serif',
+            fontFamily: 'var(--font-space), system-ui, sans-serif',
             fontStyle: 'italic',
             fontSize: '16px',
-            color: 'rgba(240,230,208,0.38)',
+            color: 'rgba(30,26,20,0.38)',
             marginTop: '4px',
           }}>
             Something is sealed inside.
@@ -131,33 +131,33 @@ function ShareCard() {
         </div>
 
         {/* divider */}
-        <div style={{ width: '100%', maxWidth: '280px', height: '1px', background: 'rgba(240,230,208,0.07)' }} />
+        <div style={{ width: '100%', maxWidth: '280px', height: '1px', background: 'rgba(30,26,20,0.07)' }} />
 
         {/* status */}
         {!isPast && opensDate ? (
           <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            <p style={{ fontSize: '12px', color: 'rgba(240,230,208,0.3)', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
+            <p style={{ fontSize: '12px', color: 'rgba(30,26,20,0.3)', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
               opens in
             </p>
             <p style={{
-              fontFamily: 'Georgia, serif',
+              fontFamily: 'var(--font-space), system-ui, sans-serif',
               fontSize: '4rem',
               fontWeight: 300,
-              color: '#c9a96e',
+              color: '#b8c8f0',
               lineHeight: 1,
             }}>
               <Countdown opensIso={opensIso} />
             </p>
-            <p style={{ fontSize: '13px', color: 'rgba(240,230,208,0.35)' }}>
+            <p style={{ fontSize: '13px', color: 'rgba(30,26,20,0.35)' }}>
               days · {opensFormatted}
             </p>
           </div>
         ) : (
           <div style={{ textAlign: 'center' }}>
-            <p style={{ fontSize: '12px', letterSpacing: '0.12em', textTransform: 'uppercase', color: '#c9a96e' }}>
+            <p style={{ fontSize: '12px', letterSpacing: '0.12em', textTransform: 'uppercase', color: '#b8c8f0' }}>
               Now open
             </p>
-            <p style={{ fontSize: '14px', color: 'rgba(240,230,208,0.4)', marginTop: '6px' }}>
+            <p style={{ fontSize: '14px', color: 'rgba(30,26,20,0.4)', marginTop: '6px' }}>
               {opensFormatted}
             </p>
           </div>
@@ -170,16 +170,16 @@ function ShareCard() {
               {fakeInitials.map((_, i) => (
                 <div key={i} style={{
                   width: '36px', height: '36px', borderRadius: '50%',
-                  background: '#150e07',
-                  border: '1.5px solid rgba(201,169,110,0.28)',
+                  background: '#0c0d1a',
+                  border: '1.5px solid rgba(184,200,240,0.28)',
                   marginLeft: i > 0 ? '-10px' : 0,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: '13px', color: 'rgba(201,169,110,0.7)',
-                  fontFamily: 'Georgia, serif',
+                  fontSize: '13px', color: 'rgba(184,200,240,0.7)',
+                  fontFamily: 'var(--font-space), system-ui, sans-serif',
                 }}>·</div>
               ))}
             </div>
-            <p style={{ fontSize: '12px', color: 'rgba(240,230,208,0.25)', letterSpacing: '0.06em' }}>
+            <p style={{ fontSize: '12px', color: 'rgba(30,26,20,0.25)', letterSpacing: '0.06em' }}>
               {n} {n === 1 ? 'person' : 'people'} sealed this
             </p>
           </div>
@@ -194,17 +194,17 @@ function ShareCard() {
           textAlign: 'center',
           padding: '16px',
           borderRadius: '50px',
-          background: 'linear-gradient(135deg, #e8c98a 0%, #c9a96e 100%)',
-          color: '#0f0a05',
+          background: 'linear-gradient(135deg, #d4e0ff 0%, #b8c8f0 100%)',
+          color: '#06070d',
           fontWeight: 600,
           fontSize: '14px',
           letterSpacing: '0.06em',
           textDecoration: 'none',
-          boxShadow: '0 4px 28px rgba(201,169,110,0.22)',
+          boxShadow: '0 4px 28px rgba(184,200,240,0.22)',
         }}>
           Capture your own moment
         </Link>
-        <p style={{ fontSize: '11px', color: 'rgba(240,230,208,0.2)', textAlign: 'center', letterSpacing: '0.04em' }}>
+        <p style={{ fontSize: '11px', color: 'rgba(30,26,20,0.2)', textAlign: 'center', letterSpacing: '0.04em' }}>
           beside — people who were actually there
         </p>
       </div>

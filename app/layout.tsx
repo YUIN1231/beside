@@ -1,12 +1,11 @@
 import type { Metadata } from 'next'
-import { Fraunces, Inter } from 'next/font/google'
+import { Space_Grotesk, Inter } from 'next/font/google'
 import './globals.css'
 
-const fraunces = Fraunces({
+const spaceGrotesk = Space_Grotesk({
   subsets: ['latin'],
-  variable: '--font-fraunces',
-  weight: ['300', '400', '500', '700'],
-  style: ['normal', 'italic'],
+  variable: '--font-space',
+  weight: ['300', '400', '500', '600', '700'],
 })
 
 const inter = Inter({
@@ -21,7 +20,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${fraunces.variable} ${inter.variable} h-full`}>
+    <html lang="en" className={`${spaceGrotesk.variable} ${inter.variable} h-full`}>
       <body className="min-h-full flex flex-col">{children}</body>
     </html>
   )

@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 import { useState, useMemo } from 'react'
 import Link from 'next/link'
 
@@ -19,7 +19,7 @@ const ANIMALS = [
 ]
 type Animal = typeof ANIMALS[0]
 
-const CONFETTI = ['#c9a96e','#FFE566','#FF6B6B','#7EC8E3','#A8E6A3','#E8E4D9','#FF9F7F','#C9B1FF']
+const CONFETTI = ['#b8c8f0','#FFE566','#FF6B6B','#7EC8E3','#A8E6A3','#E8E4D9','#FF9F7F','#C9B1FF']
 
 function judge(player: Hand, cpu: Hand): Result {
   if (player === cpu) return 'あいこ'
@@ -160,8 +160,8 @@ export default function JankenPage() {
           100%{ transform: scale(0.78) rotate(-8deg); opacity: 0.35; }
         }
         @keyframes glow-pulse {
-          0%,100%{ filter: drop-shadow(0 0 6px rgba(201,169,110,0.5)); }
-          50%     { filter: drop-shadow(0 0 22px rgba(201,169,110,1)); }
+          0%,100%{ filter: drop-shadow(0 0 6px rgba(184,200,240,0.5)); }
+          50%     { filter: drop-shadow(0 0 22px rgba(184,200,240,1)); }
         }
         @keyframes victory-pop {
           0%  { transform: scale(2.2); opacity: 0; }
@@ -187,7 +187,7 @@ export default function JankenPage() {
       {/* Win flash overlay */}
       {flash && (
         <div className="fixed inset-0 pointer-events-none" style={{
-          background: 'radial-gradient(ellipse at center, rgba(201,169,110,0.25) 0%, transparent 70%)',
+          background: 'radial-gradient(ellipse at center, rgba(184,200,240,0.25) 0%, transparent 70%)',
           animation: 'screen-flash 0.5s ease-out forwards',
           zIndex: 80,
         }} />
@@ -212,7 +212,7 @@ export default function JankenPage() {
         <div className="flex justify-center gap-10 py-3">
           {([['win','勝'],['draw','引'],['lose','負']] as [keyof typeof score, string][]).map(([k, label]) => (
             <div key={k} className="flex flex-col items-center gap-1">
-              <span className="text-xl font-extralight tabular-nums" style={{ color: k === 'win' ? '#c9a96e' : '#4a5068' }}>
+              <span className="text-xl font-extralight tabular-nums" style={{ color: k === 'win' ? '#b8c8f0' : '#4a5068' }}>
                 {score[k]}
               </span>
               <span className="text-xs tracking-widest" style={{ color: '#2a3050' }}>{label}</span>
@@ -232,7 +232,7 @@ export default function JankenPage() {
               <button key={a.id} onClick={() => chooseAnimal(a)}
                 className="flex flex-col items-center gap-2 py-5 rounded-2xl transition-all duration-100 active:scale-88"
                 style={{ border: '1px solid #1e2438', animation: `fade-up 0.3s ease-out ${i * 55}ms both`, opacity: 0 }}
-                onMouseEnter={e => { e.currentTarget.style.borderColor = '#c9a96e'; e.currentTarget.style.background = 'rgba(201,169,110,0.05)' }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = '#b8c8f0'; e.currentTarget.style.background = 'rgba(184,200,240,0.05)' }}
                 onMouseLeave={e => { e.currentTarget.style.borderColor = '#1e2438'; e.currentTarget.style.background = 'transparent' }}
               >
                 <span className="text-4xl leading-none">{a.emoji}</span>
@@ -289,8 +289,8 @@ export default function JankenPage() {
             {/* Dots */}
             {isShaking && (
               <div className="flex gap-2">
-                <span className="w-1.5 h-1.5 rounded-full" style={{ background: '#c9a96e' }} />
-                <span className="w-1.5 h-1.5 rounded-full" style={{ background: phase === 'ken' ? '#c9a96e' : '#1e2438', transition: 'background 0.1s' }} />
+                <span className="w-1.5 h-1.5 rounded-full" style={{ background: '#b8c8f0' }} />
+                <span className="w-1.5 h-1.5 rounded-full" style={{ background: phase === 'ken' ? '#b8c8f0' : '#1e2438', transition: 'background 0.1s' }} />
                 <span className="w-1.5 h-1.5 rounded-full" style={{ background: '#1e2438' }} />
               </div>
             )}
@@ -298,7 +298,7 @@ export default function JankenPage() {
             {/* Countdown / result text */}
             {isShaking && (
               <span key={`c-${phase}`} className="text-3xl font-light tracking-[0.35em]"
-                style={{ color: '#c9a96e', animation: 'stamp 0.2s ease-out forwards', opacity: 0 }}>
+                style={{ color: '#b8c8f0', animation: 'stamp 0.2s ease-out forwards', opacity: 0 }}>
                 {phase === 'jan' ? 'じゃん' : 'けん'}
               </span>
             )}
@@ -308,7 +308,7 @@ export default function JankenPage() {
                   className="font-extralight tracking-[0.2em]"
                   style={{
                     fontSize: result === '勝ち' ? '2.8rem' : '2.2rem',
-                    color: result === '勝ち' ? '#c9a96e' : result === '負け' ? '#4a5068' : '#2a4060',
+                    color: result === '勝ち' ? '#b8c8f0' : result === '負け' ? '#4a5068' : '#2a4060',
                     animation: result === '勝ち'
                       ? 'victory-pop 0.5s cubic-bezier(0.34,1.56,0.64,1) forwards, glow-pulse 2s ease-in-out 0.6s infinite'
                       : 'stamp 0.3s ease-out forwards',
@@ -320,7 +320,7 @@ export default function JankenPage() {
                 </span>
                 {result === '勝ち' && (
                   <span className="text-xs tracking-widest" style={{
-                    color: '#c9a96e',
+                    color: '#b8c8f0',
                     animation: 'fade-up 0.3s ease-out 0.5s both',
                     opacity: 0,
                   }}>
@@ -341,7 +341,7 @@ export default function JankenPage() {
                       animation: `fade-up 0.3s ease-out ${i * 60}ms both`,
                       opacity: 0,
                     }}
-                    onMouseEnter={e => { e.currentTarget.style.borderColor = '#c9a96e'; e.currentTarget.style.background = 'rgba(201,169,110,0.05)' }}
+                    onMouseEnter={e => { e.currentTarget.style.borderColor = '#b8c8f0'; e.currentTarget.style.background = 'rgba(184,200,240,0.05)' }}
                     onMouseLeave={e => { e.currentTarget.style.borderColor = '#1e2438'; e.currentTarget.style.background = 'transparent' }}
                   >
                     <span className="text-4xl leading-none">{EMOJI[hand]}</span>

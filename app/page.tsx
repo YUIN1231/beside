@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import Navbar from './components/Navbar'
@@ -8,13 +8,14 @@ import {
   hasCapsuledThisMonth, saveCapsule, getUser,
 } from './lib/storage'
 import { shareOrDownload } from './lib/shareImage'
-import { reverseGeocode } from './lib/supabase'
+import {
+  reverseGeocode, saveCapsuleRemote, upsertProfile,
+  createJoinSession, subscribeToSession, getJoinEntries,
+} from './lib/supabase'
 import type { Capsule, Member, GeoLocation } from './lib/types'
 
 type AppState  = 'loading' | 'create' | 'sealed' | 'ready'
-type Step      = 'landing' | 'voice' | 'photo' | 'video' | 'tag' | 'seal' | 'sealed-anim' | 'done'
-
-function uid() { return Math.random().toString(36).slice(2) }
+type Step      = 'landing' | 'tutorial' | 'voice' | 'photo' | 'video' | 'tag' | 'seal' | 'sealed-anim' | 'done'
 
 /* ─────────────────────────────── Component ─────────────────────────── */
 export default function Home() {
@@ -32,8 +33,10 @@ export default function Home() {
   const [recording,    setRecording]    = useState(false)
   const [audioBlob,    setAudioBlob]    = useState<Blob | null>(null)
   const [waveSnap,     setWaveSnap]     = useState<number[]>([])
-  const mediaRecRef  = useRef<MediaRecorder | null>(null)
-  const audioChunks  = useRef<Blob[]>([])
+  const [audioProgress, setAudioProgress] = useState(0)
+  const mediaRecRef   = useRef<MediaRecorder | null>(null)
+  const audioChunks   = useRef<Blob[]>([])
+  const audioInterval = useRef<ReturnType<typeof setInterval> | null>(null)
 
   /* photo */
   const [camStream,    setCamStream]    = useState<MediaStream | null>(null)
@@ -54,9 +57,15 @@ export default function Home() {
   const vidChunks    = useRef<Blob[]>([])
   const vidInterval  = useRef<ReturnType<typeof setInterval> | null>(null)
 
-  /* tag */
-  const [members, setMembers] = useState<Member[]>([])
-  const [tagInput, setTagInput] = useState('')
+  /* tag + join session */
+  const [members,       setMembers]       = useState<Member[]>([])
+  const [tagInput,      setTagInput]      = useState('')
+  const [capsuleId,     setCapsuleId]     = useState(() => Math.random().toString(36).slice(2))
+  const [joinSessionId, setJoinSessionId] = useState<string | null>(null)
+  const [joinUrl,       setJoinUrl]       = useState<string>('')
+  const [sealing,       setSealing]       = useState(false)
+  const qrCanvasRef = useRef<HTMLCanvasElement | null>(null)
+  const joinSubRef  = useRef<ReturnType<typeof subscribeToSession> | null>(null)
 
   /* seal */
   const [holdPct,    setHoldPct]    = useState(0)
@@ -95,23 +104,88 @@ export default function Home() {
     }
   }, [vidStream])
 
+  /* ── join session + QR ── */
+  useEffect(() => {
+    if (step !== 'tag') return
+    const user = getUser()
+    if (!user) return
+
+    const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://beside-gules.vercel.app'
+
+    createJoinSession(capsuleId, user.email, user.name, geo?.city ?? '').then(async sid => {
+      if (!sid) return
+      setJoinSessionId(sid)
+      const url = `${baseUrl}/join/${sid}`
+      setJoinUrl(url)
+
+      // Draw QR
+      if (typeof window !== 'undefined') {
+        const QRCode = (await import('qrcode')).default
+        if (qrCanvasRef.current) {
+          QRCode.toCanvas(qrCanvasRef.current, url, {
+            width: 200,
+            color: { dark: '#1E1A14', light: '#F5F0E8' },
+            margin: 2,
+          })
+        }
+      }
+
+      // Load existing entries
+      const existing = await getJoinEntries(sid)
+      existing.forEach(e => {
+        setMembers(prev => {
+          if (prev.some(m => m.email === e.email)) return prev
+          return [...prev, { name: e.name, email: e.email, initial: e.name[0]?.toUpperCase() ?? '?' }]
+        })
+      })
+
+      // Subscribe for new entries
+      joinSubRef.current = subscribeToSession(sid, entry => {
+        setMembers(prev => {
+          if (prev.some(m => m.email === entry.email)) return prev
+          return [...prev, { name: entry.name, email: entry.email, initial: entry.name[0]?.toUpperCase() ?? '?' }]
+        })
+      })
+    })
+
+    return () => {
+      joinSubRef.current?.unsubscribe()
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step])
+
   /* ── voice ── */
+  const AUDIO_SECS = 60
   const startRecording = async () => {
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
     setAudioStream(stream)
     const mr = new MediaRecorder(stream)
     mediaRecRef.current = mr
     audioChunks.current = []
+    setAudioProgress(0)
     mr.ondataavailable = e => audioChunks.current.push(e.data)
     mr.onstop = () => {
       setAudioBlob(new Blob(audioChunks.current, { type: 'audio/webm' }))
       stream.getTracks().forEach(t => t.stop())
       setAudioStream(null)
+      if (audioInterval.current) clearInterval(audioInterval.current)
     }
     mr.start()
     setRecording(true)
+    audioInterval.current = setInterval(() => {
+      setAudioProgress(p => {
+        const next = p + 1 / (AUDIO_SECS * 10)
+        if (next >= 1) { mr.stop(); return 1 }
+        return next
+      })
+    }, 100)
+    setTimeout(() => { if (mr.state === 'recording') mr.stop() }, AUDIO_SECS * 1000)
   }
-  const stopRecording = () => { mediaRecRef.current?.stop(); setRecording(false) }
+  const stopRecording = () => {
+    mediaRecRef.current?.stop()
+    setRecording(false)
+    if (audioInterval.current) clearInterval(audioInterval.current)
+  }
   const handleWaveSnap = useCallback((d: number[]) => { setWaveSnap(d) }, [])
 
   /* ── photo ── */
@@ -180,12 +254,16 @@ export default function Home() {
     setHoldPct(0)
   }
 
-  const doSeal = () => {
+  const doSeal = async () => {
+    if (sealing) return
+    setSealing(true)
     const now   = new Date()
     const opens = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000)
     const user  = getUser()
+
+    // Save locally first with blob URLs for instant playback
     const cap: Capsule = {
-      id:        uid(),
+      id:        capsuleId,
       location:  geo?.city ?? 'Unknown',
       city:      geo?.city ?? 'Unknown',
       latitude:  geo?.latitude,
@@ -201,7 +279,22 @@ export default function Home() {
     saveCapsule(cap)
     setSealedData(cap)
     setStep('sealed-anim')
+
+    // Upload to Supabase in background
+    if (user) {
+      saveCapsuleRemote(cap, user.email, {
+        audio:       audioBlob  ?? undefined,
+        photoDataUrl: photoUrl  ?? undefined,
+        video:       videoBlob  ?? undefined,
+      }).then(updatedCap => {
+        // Update local storage with remote URLs
+        saveCapsule(updatedCap)
+        setSealedData(updatedCap)
+      }).catch(err => console.error('Supabase save error', err))
+    }
+
     setTimeout(() => setStep('done'), 2400)
+    setSealing(false)
   }
 
   /* ── share card ── */
@@ -245,7 +338,7 @@ export default function Home() {
           </div>
           <div className="fade-up flex flex-col gap-3">
             <p className="text-[11px] tracking-[0.22em] uppercase" style={{ color: 'var(--gold-dim)' }}>Sealed</p>
-            <p className="text-[3.5rem] leading-none" style={{ fontFamily: 'var(--font-fraunces)', color: 'var(--gold)' }}>{days}</p>
+            <p className="text-[3.5rem] leading-none" style={{ fontFamily: 'var(--font-space)', color: 'var(--gold)' }}>{days}</p>
             <p className="text-sm" style={{ color: 'var(--text-2)' }}>days until it opens</p>
             <p className="text-xs mt-1" style={{ color: 'var(--text-3)' }}>{sealedCap.city}</p>
           </div>
@@ -274,16 +367,16 @@ export default function Home() {
           </div>
           <div className="fade-up flex flex-col gap-3">
             <p className="text-[11px] tracking-[0.22em] uppercase" style={{ color: 'var(--gold)' }}>Ready</p>
-            <h2 className="text-3xl" style={{ fontFamily: 'var(--font-fraunces)' }}>Your capsule is open.</h2>
+            <h2 className="text-3xl" style={{ fontFamily: 'var(--font-space)' }}>Your capsule is open.</h2>
             <p className="text-sm" style={{ color: 'var(--text-2)' }}>{sealedCap.city}</p>
           </div>
           <button
             onClick={() => router.push(`/capsules/${sealedCap.id}`)}
             className="text-sm tracking-[0.06em] px-10 py-3.5 rounded-full transition-all duration-300 active:scale-95"
             style={{
-              background: 'linear-gradient(135deg, #e8c98a 0%, #c9a96e 100%)',
-              color: '#0f0a05', fontWeight: 600,
-              boxShadow: '0 4px 24px rgba(201,169,110,0.25)',
+              background: 'var(--gold)',
+              color: 'var(--bg)', fontWeight: 600,
+              boxShadow: '0 4px 20px rgba(196,66,42,0.22)',
             }}
           >
             Open it
@@ -324,7 +417,7 @@ export default function Home() {
               <p className="text-[11px] tracking-[0.22em] uppercase" style={{ color: 'var(--gold-dim)' }}>
                 {geo?.city ?? '···'} · {new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
               </p>
-              <h1 className="text-[2.2rem] leading-[1.2]" style={{ fontFamily: 'var(--font-fraunces)' }}>
+              <h1 className="text-[2.2rem] leading-[1.2]" style={{ fontFamily: 'var(--font-space)' }}>
                 Who's beside you<br />tonight?
               </h1>
             </div>
@@ -337,7 +430,7 @@ export default function Home() {
               <p className="fade-up-3 text-xs" style={{ color: 'var(--text-3)' }}>You've already made a capsule this month.</p>
             ) : (
               <button
-                onClick={() => setStep('voice')}
+                onClick={() => setStep('tutorial')}
                 className="fade-up-3 text-sm tracking-[0.06em] px-10 py-3.5 rounded-full transition-all duration-300 active:scale-95 btn-gold"
               >
                 Take a capsule
@@ -348,13 +441,121 @@ export default function Home() {
         </>
       )}
 
+      {/* ── TUTORIAL ── */}
+      {step === 'tutorial' && (
+        <div className="min-h-screen flex flex-col">
+          <Header />
+          <div className="flex-1 flex flex-col items-center justify-center px-6 pb-20 gap-8">
+            <div className="fade-up text-center">
+              <h1 className="text-[1.9rem] leading-tight mb-2" style={{ fontFamily: 'var(--font-space)' }}>Here's the drill.</h1>
+              <p className="text-sm" style={{ color: 'var(--text-2)' }}>4 steps. One take each. Sealed for a month.</p>
+            </div>
+
+            <div className="fade-up-2 grid grid-cols-2 gap-3 w-full max-w-xs">
+              {/* Voice */}
+              <div style={{
+                background: '#fff', borderRadius: '4px',
+                padding: '16px 12px 14px',
+                boxShadow: '0 3px 14px rgba(30,26,20,0.10), 0 1px 3px rgba(30,26,20,0.06)',
+                transform: 'rotate(-1.8deg)',
+              }}>
+                <div style={{ height: '58px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '10px' }}>
+                  <svg width="44" height="44" viewBox="0 0 44 44" fill="none">
+                    <rect x="6"  y="20" width="4" height="8"  rx="2" fill="#C4422A" opacity="0.35"/>
+                    <rect x="13" y="15" width="4" height="18" rx="2" fill="#C4422A" opacity="0.6"/>
+                    <rect x="20" y="10" width="4" height="24" rx="2" fill="#C4422A"/>
+                    <rect x="27" y="16" width="4" height="14" rx="2" fill="#C4422A" opacity="0.65"/>
+                    <rect x="34" y="20" width="4" height="6"  rx="2" fill="#C4422A" opacity="0.35"/>
+                  </svg>
+                </div>
+                <p className="text-xs font-semibold" style={{ color: '#1E1A14', marginBottom: '2px' }}>Voice</p>
+                <p style={{ fontSize: '10px', color: 'rgba(30,26,20,0.45)' }}>60 seconds</p>
+              </div>
+
+              {/* Photo */}
+              <div style={{
+                background: '#fff', borderRadius: '4px',
+                padding: '16px 12px 14px',
+                boxShadow: '0 3px 14px rgba(30,26,20,0.10), 0 1px 3px rgba(30,26,20,0.06)',
+                transform: 'rotate(1.3deg)',
+              }}>
+                <div style={{ height: '58px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '10px' }}>
+                  <svg width="44" height="44" viewBox="0 0 44 44" fill="none">
+                    <rect x="5" y="13" width="34" height="23" rx="5" stroke="#C4422A" strokeWidth="1.5"/>
+                    <circle cx="22" cy="24.5" r="7.5" stroke="#C4422A" strokeWidth="1.5"/>
+                    <circle cx="22" cy="24.5" r="3" fill="#C4422A" opacity="0.35"/>
+                    <path d="M16 13v-2a2 2 0 012-2h8a2 2 0 012 2v2" stroke="#C4422A" strokeWidth="1.5" strokeLinecap="round"/>
+                    <circle cx="35" cy="19" r="2" fill="#C4422A" opacity="0.5"/>
+                  </svg>
+                </div>
+                <p className="text-xs font-semibold" style={{ color: '#1E1A14', marginBottom: '2px' }}>Photo</p>
+                <p style={{ fontSize: '10px', color: 'rgba(30,26,20,0.45)' }}>One shot</p>
+              </div>
+
+              {/* Video */}
+              <div style={{
+                background: '#fff', borderRadius: '4px',
+                padding: '16px 12px 14px',
+                boxShadow: '0 3px 14px rgba(30,26,20,0.10), 0 1px 3px rgba(30,26,20,0.06)',
+                transform: 'rotate(0.9deg)',
+              }}>
+                <div style={{ height: '58px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '10px' }}>
+                  <svg width="44" height="44" viewBox="0 0 44 44" fill="none">
+                    <rect x="4" y="11" width="26" height="22" rx="3" stroke="#C4422A" strokeWidth="1.5"/>
+                    <rect x="4" y="11" width="5" height="5" rx="1" fill="#C4422A" opacity="0.22"/>
+                    <rect x="4" y="19" width="5" height="5" rx="1" fill="#C4422A" opacity="0.22"/>
+                    <rect x="4" y="27" width="5" height="5" rx="1" fill="#C4422A" opacity="0.22"/>
+                    <path d="M16 18l10 4-10 5V18z" fill="#C4422A"/>
+                    <path d="M30 17l9-4v18l-9-4V17z" stroke="#C4422A" strokeWidth="1.5" strokeLinejoin="round"/>
+                  </svg>
+                </div>
+                <p className="text-xs font-semibold" style={{ color: '#1E1A14', marginBottom: '2px' }}>Video</p>
+                <p style={{ fontSize: '10px', color: 'rgba(30,26,20,0.45)' }}>10 seconds</p>
+              </div>
+
+              {/* Tag */}
+              <div style={{
+                background: '#fff', borderRadius: '4px',
+                padding: '16px 12px 14px',
+                boxShadow: '0 3px 14px rgba(30,26,20,0.10), 0 1px 3px rgba(30,26,20,0.06)',
+                transform: 'rotate(-0.7deg)',
+              }}>
+                <div style={{ height: '58px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '10px' }}>
+                  <svg width="44" height="44" viewBox="0 0 44 44" fill="none">
+                    <circle cx="15" cy="14" r="5" stroke="#C4422A" strokeWidth="1.5"/>
+                    <path d="M5 34c0-5.5 4.5-9 10-9" stroke="#C4422A" strokeWidth="1.5" strokeLinecap="round"/>
+                    <circle cx="29" cy="14" r="5" stroke="#C4422A" strokeWidth="1.5"/>
+                    <path d="M39 34c0-5.5-4.5-9-10-9" stroke="#C4422A" strokeWidth="1.5" strokeLinecap="round"/>
+                    <rect x="18" y="27" width="3" height="3" rx="0.5" fill="#C4422A" opacity="0.45"/>
+                    <rect x="23" y="27" width="3" height="3" rx="0.5" fill="#C4422A" opacity="0.45"/>
+                    <rect x="18" y="32" width="3" height="3" rx="0.5" fill="#C4422A" opacity="0.45"/>
+                    <rect x="23" y="32" width="3" height="3" rx="0.5" fill="#C4422A" opacity="0.45"/>
+                  </svg>
+                </div>
+                <p className="text-xs font-semibold" style={{ color: '#1E1A14', marginBottom: '2px' }}>Tag</p>
+                <p style={{ fontSize: '10px', color: 'rgba(30,26,20,0.45)' }}>Who was there</p>
+              </div>
+            </div>
+
+            <div className="fade-up-3 flex flex-col items-center gap-3">
+              <button
+                onClick={() => setStep('voice')}
+                className="text-sm tracking-[0.06em] px-12 py-4 rounded-full transition-all duration-300 active:scale-95 btn-gold"
+              >
+                Start
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ── VOICE ── */}
       {step === 'voice' && (
         <div className="min-h-screen flex flex-col">
           <StepHeader label="Voice" onBack={() => setStep('landing')} step={1} total={4} />
           <div className="flex-1 flex flex-col items-center justify-center px-8 gap-8">
             <div className="fade-up text-center">
-              <h2 className="text-3xl mb-2" style={{ fontFamily: 'var(--font-fraunces)' }}>Say something.</h2>
+              <h2 className="text-3xl mb-2" style={{ fontFamily: 'var(--font-space)' }}>Say something.</h2>
               <p className="text-sm" style={{ color: 'var(--text-2)' }}>One take. No edits.</p>
             </div>
 
@@ -366,7 +567,7 @@ export default function Home() {
                   frozen={!!audioBlob && !recording}
                   frozenData={waveSnap}
                   onFreezeData={handleWaveSnap}
-                  color="#c9a96e"
+                  color="#C4422A"
                   height={80}
                 />
               ) : (
@@ -389,7 +590,7 @@ export default function Home() {
                 style={{
                   width: '80px', height: '80px',
                   border: recording ? '1px solid var(--gold)' : '1px solid var(--border-2)',
-                  background: recording ? 'rgba(201,169,110,0.1)' : 'var(--surface)',
+                  background: recording ? 'rgba(196,66,42,0.07)' : 'var(--surface)',
                 }}
               >
                 <div className="absolute inset-0 flex items-center justify-center">
@@ -398,7 +599,7 @@ export default function Home() {
                     height: recording ? '22px' : '14px',
                     borderRadius: recording ? '4px' : '50%',
                     background: 'var(--gold)',
-                    boxShadow: recording ? '0 0 16px rgba(201,169,110,0.6)' : 'none',
+                    boxShadow: recording ? '0 0 14px rgba(196,66,42,0.45)' : 'none',
                     transition: 'all 0.3s ease',
                   }} />
                 </div>
@@ -424,7 +625,7 @@ export default function Home() {
           <StepHeader label="Photo" onBack={() => setStep('voice')} step={2} total={4} />
           <div className="flex-1 flex flex-col items-center justify-center px-8 gap-8">
             <div className="fade-up text-center">
-              <h2 className="text-3xl mb-2" style={{ fontFamily: 'var(--font-fraunces)' }}>Who's beside you?</h2>
+              <h2 className="text-3xl mb-2" style={{ fontFamily: 'var(--font-space)' }}>Who's beside you?</h2>
               <p className="text-sm" style={{ color: 'var(--text-2)' }}>One shot. Make it real.</p>
             </div>
 
@@ -436,12 +637,10 @@ export default function Home() {
                 display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: '12px',
               }}>
                 <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
-                  <circle cx="20" cy="20" r="17" stroke="var(--text-3)" strokeWidth="1" />
-                  <circle cx="20" cy="20" r="8" stroke="var(--text-3)" strokeWidth="1" />
-                  <line x1="20" y1="3" x2="20" y2="8" stroke="var(--text-3)" />
-                  <line x1="20" y1="32" x2="20" y2="37" stroke="var(--text-3)" />
-                  <line x1="3" y1="20" x2="8" y2="20" stroke="var(--text-3)" />
-                  <line x1="32" y1="20" x2="37" y2="20" stroke="var(--text-3)" />
+                  <rect x="4" y="11" width="32" height="22" rx="5" stroke="var(--text-3)" strokeWidth="1.5"/>
+                  <circle cx="20" cy="22" r="7.5" stroke="var(--text-3)" strokeWidth="1.5"/>
+                  <path d="M14 11V9a2 2 0 012-2h8a2 2 0 012 2v2" stroke="var(--text-3)" strokeWidth="1.5" strokeLinecap="round"/>
+                  <circle cx="32" cy="17" r="2" fill="var(--text-3)"/>
                 </svg>
                 <span className="text-xs tracking-[0.12em]" style={{ color: 'var(--text-3)' }}>Open camera</span>
               </button>
@@ -453,10 +652,10 @@ export default function Home() {
                   <video ref={videoRef} autoPlay playsInline muted style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   <div style={{
                     position: 'absolute', inset: 0, pointerEvents: 'none',
-                    border: '1px solid rgba(201,169,110,0.15)', borderRadius: '16px',
+                    border: '1px solid rgba(255,255,255,0.15)', borderRadius: '16px',
                   }}>
-                    <div style={{ position: 'absolute', top: '50%', left: '16px', right: '16px', height: '1px', background: 'rgba(201,169,110,0.08)' }} />
-                    <div style={{ position: 'absolute', left: '50%', top: '16px', bottom: '16px', width: '1px', background: 'rgba(201,169,110,0.08)' }} />
+                    <div style={{ position: 'absolute', top: '50%', left: '16px', right: '16px', height: '1px', background: 'rgba(255,255,255,0.10)' }} />
+                    <div style={{ position: 'absolute', left: '50%', top: '16px', bottom: '16px', width: '1px', background: 'rgba(255,255,255,0.10)' }} />
                   </div>
                   {/* flip button */}
                   <button onClick={flipCamera} style={{
@@ -476,11 +675,11 @@ export default function Home() {
                 </div>
                 <button onClick={takePhoto} className="rounded-full flex items-center justify-center transition-all active:scale-90" style={{
                   width: '60px', height: '60px',
-                  background: 'linear-gradient(145deg, rgba(201,169,110,0.18) 0%, rgba(201,169,110,0.06) 100%)',
+                  background: 'linear-gradient(145deg, rgba(196,66,42,0.10) 0%, rgba(196,66,42,0.04) 100%)',
                   border: '1.5px solid var(--gold)',
-                  boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.15), 0 3px 12px rgba(0,0,0,0.3)',
+                  boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.5), 0 2px 8px rgba(30,26,20,0.10)',
                 }}>
-                  <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--gold)', boxShadow: '0 0 8px rgba(201,169,110,0.6)' }} />
+                  <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--gold)', boxShadow: '0 0 8px rgba(196,66,42,0.5)' }} />
                 </button>
               </div>
             )}
@@ -509,7 +708,7 @@ export default function Home() {
           <StepHeader label="Video" onBack={() => setStep('photo')} step={3} total={4} />
           <div className="flex-1 flex flex-col items-center justify-center px-8 gap-8">
             <div className="fade-up text-center">
-              <h2 className="text-3xl mb-2" style={{ fontFamily: 'var(--font-fraunces)' }}>Last one.</h2>
+              <h2 className="text-3xl mb-2" style={{ fontFamily: 'var(--font-space)' }}>Last one.</h2>
               <p className="text-sm" style={{ color: 'var(--text-2)' }}>10 seconds. Just be here.</p>
             </div>
 
@@ -517,11 +716,11 @@ export default function Home() {
               <div className="flex flex-col items-center gap-5">
                 <button onClick={startVideo} className="rounded-full flex items-center justify-center transition-all active:scale-90" style={{
                   width: '90px', height: '90px',
-                  background: 'linear-gradient(145deg, rgba(240,230,208,0.08) 0%, rgba(240,230,208,0.03) 100%)',
-                  border: '1.5px solid rgba(240,230,208,0.18)',
-                  boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.06), 0 4px 16px rgba(0,0,0,0.3)',
+                  background: 'var(--surface)',
+                  border: '1.5px solid var(--border-2)',
+                  boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.6), 0 2px 8px rgba(30,26,20,0.08)',
                 }}>
-                  <div className="vid-pulse" style={{ width: '16px', height: '16px', borderRadius: '50%', background: 'var(--gold)', boxShadow: '0 0 10px rgba(201,169,110,0.5)' }} />
+                  <div className="vid-pulse" style={{ width: '16px', height: '16px', borderRadius: '50%', background: 'var(--gold)', boxShadow: '0 0 10px rgba(196,66,42,0.45)' }} />
                 </button>
                 {/* camera flip */}
                 <button onClick={() => setVidFacing(f => f === 'environment' ? 'user' : 'environment')}
@@ -548,7 +747,7 @@ export default function Home() {
                       width: `${vidProgress * 100}%`,
                       background: 'var(--gold)',
                       transition: 'width 0.1s linear',
-                      boxShadow: '0 0 8px rgba(201,169,110,0.6)',
+                      boxShadow: '0 0 8px rgba(196,66,42,0.45)',
                     }} />
                   </div>
                   {/* pulse dot */}
@@ -581,14 +780,31 @@ export default function Home() {
       {step === 'tag' && (
         <div className="min-h-screen flex flex-col">
           <StepHeader label="Tag" onBack={() => setStep('video')} step={4} total={4} />
-          <div className="flex-1 flex flex-col px-8 pt-10 gap-8">
+          <div className="flex-1 flex flex-col px-8 pt-8 gap-6 overflow-y-auto pb-8">
+
             <div className="fade-up">
-              <h2 className="text-3xl mb-2" style={{ fontFamily: 'var(--font-fraunces)' }}>Who was there?</h2>
+              <h2 className="text-3xl mb-2" style={{ fontFamily: 'var(--font-space)' }}>Who was there?</h2>
               <p className="text-sm leading-relaxed" style={{ color: 'var(--text-2)' }}>
-                Only people at the same place, within 15 minutes.<br />They'll get a location check to confirm.
+                Share the QR so people can join instantly.
               </p>
             </div>
 
+            {/* QR section */}
+            {joinUrl && (
+              <div className="fade-up-2 flex flex-col items-center gap-4 py-4 rounded-2xl" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+                <p className="text-[10px] tracking-[0.2em] uppercase" style={{ color: 'var(--text-3)' }}>Scan to join</p>
+                <canvas ref={qrCanvasRef} style={{ borderRadius: '12px' }} />
+                <button
+                  onClick={() => { if (joinUrl) navigator.clipboard?.writeText(joinUrl) }}
+                  className="flex items-center gap-2 px-4 py-2 rounded-full text-xs transition-all active:scale-95"
+                  style={{ background: 'rgba(196,66,42,0.07)', color: 'var(--gold)', border: '1px solid rgba(196,66,42,0.2)' }}
+                >
+                  Copy link
+                </button>
+              </div>
+            )}
+
+            {/* Manual add */}
             <div className="relative">
               <input
                 type="text"
@@ -601,11 +817,11 @@ export default function Home() {
                     setTagInput('')
                   }
                 }}
-                placeholder="Name or email — press Enter"
+                placeholder="Or type a name — press Enter"
                 style={{
-                  width: '100%', background: 'rgba(240,230,208,0.05)',
-                  border: '1px solid rgba(240,230,208,0.1)', borderRadius: '16px',
-                  padding: '16px 18px', color: 'var(--text)', fontSize: '14px',
+                  width: '100%', background: 'rgba(30,26,20,0.04)',
+                  border: '1px solid var(--border)', borderRadius: '16px',
+                  padding: '14px 18px', color: 'var(--text)', fontSize: '14px',
                   outline: 'none',
                 }}
               />
@@ -617,7 +833,10 @@ export default function Home() {
                   <div key={i} className="flex items-center justify-between px-4 py-3 rounded-xl" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs" style={{ background: 'var(--border-2)', color: 'var(--gold)' }}>{m.initial}</div>
-                      <span className="text-sm">{m.name}</span>
+                      <div>
+                        <p className="text-sm">{m.name}</p>
+                        {m.email && <p className="text-[10px]" style={{ color: 'var(--text-3)' }}>{m.email}</p>}
+                      </div>
                     </div>
                     <button onClick={() => setMembers(ms => ms.filter((_, j) => j !== i))} style={{ color: 'var(--text-3)', fontSize: '18px', lineHeight: 1 }}>×</button>
                   </div>
@@ -625,7 +844,7 @@ export default function Home() {
               </div>
             )}
 
-            <div className="mt-auto pb-12 flex flex-col gap-3">
+            <div className="flex flex-col gap-3">
               <button onClick={() => setStep('seal')} className="w-full py-4 rounded-full text-sm tracking-[0.08em] active:scale-95" style={{ background: 'var(--gold)', color: 'var(--bg)' }}>
                 {members.length > 0 ? 'Continue to seal' : 'Skip — seal alone'}
               </button>
@@ -639,7 +858,7 @@ export default function Home() {
         <div className="min-h-screen flex flex-col items-center justify-center px-8 text-center gap-10">
           <div className="fade-up">
             <p className="text-xs tracking-[0.25em] uppercase mb-4" style={{ color: 'var(--gold-dim)' }}>Seal</p>
-            <h2 className="text-3xl mb-3" style={{ fontFamily: 'var(--font-fraunces)' }}>Hold to seal.</h2>
+            <h2 className="text-3xl mb-3" style={{ fontFamily: 'var(--font-space)' }}>Hold to seal.</h2>
             <p className="text-sm leading-relaxed" style={{ color: 'var(--text-2)' }}>
               Hold for 3 seconds.<br />Cannot be undone.
             </p>
@@ -663,12 +882,12 @@ export default function Home() {
                 strokeLinecap="round"
                 strokeDasharray={circumference}
                 strokeDashoffset={circumference * (1 - holdPct)}
-                style={{ transition: 'stroke-dashoffset 0.05s linear', filter: holdPct > 0 ? 'drop-shadow(0 0 6px rgba(201,169,110,0.6))' : 'none' }}
+                style={{ transition: 'stroke-dashoffset 0.05s linear', filter: holdPct > 0 ? 'drop-shadow(0 0 5px rgba(196,66,42,0.5))' : 'none' }}
               />
             </svg>
             <div style={{
               width: '80px', height: '80px', borderRadius: '50%',
-              background: holdPct > 0 ? `rgba(201,169,110,${0.06 + holdPct * 0.14})` : 'var(--surface)',
+              background: holdPct > 0 ? `rgba(196,66,42,${0.05 + holdPct * 0.10})` : 'var(--surface)',
               border: '1px solid var(--border-2)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               transition: 'background 0.1s',
@@ -687,9 +906,9 @@ export default function Home() {
           <div className="stamp">
             <div className="w-36 h-36 rounded-full flex items-center justify-center" style={{
               background: 'var(--gold)',
-              boxShadow: '0 0 60px rgba(201,169,110,0.4)',
+              boxShadow: '0 0 60px rgba(196,66,42,0.3)',
             }}>
-              <span style={{ fontFamily: 'var(--font-fraunces)', fontSize: '64px', color: 'var(--bg)', fontWeight: 700 }}>B</span>
+              <span style={{ fontFamily: 'var(--font-space)', fontSize: '64px', color: 'var(--bg)', fontWeight: 700 }}>B</span>
             </div>
           </div>
         </div>
@@ -700,7 +919,7 @@ export default function Home() {
         <div className="min-h-screen flex flex-col items-center justify-center px-8 text-center gap-8">
           <div className="sealed-text text-xs tracking-[0.35em] uppercase" style={{ color: 'var(--gold)' }}>Sealed</div>
           <div className="fade-up flex flex-col gap-2">
-            <h2 className="text-4xl" style={{ fontFamily: 'var(--font-fraunces)' }}>
+            <h2 className="text-4xl" style={{ fontFamily: 'var(--font-space)' }}>
               See you in<br />1 month.
             </h2>
           </div>
@@ -719,13 +938,13 @@ export default function Home() {
             onClick={share}
             className="fade-up-3 w-full flex items-center justify-center gap-3 py-4 rounded-full transition-all active:scale-95"
             style={{
-              background: 'linear-gradient(135deg, #e8c98a 0%, #c9a96e 100%)',
-              color: '#0f0a05', fontWeight: 600,
-              boxShadow: '0 4px 28px rgba(201,169,110,0.28)',
+              background: 'var(--gold)',
+              color: 'var(--bg)', fontWeight: 600,
+              boxShadow: '0 4px 20px rgba(196,66,42,0.25)',
             }}
           >
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-              <path d="M8 1v9M4 5l4-4 4 4M2 11v3h12v-3" stroke="#0f0a05" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M8 1v9M4 5l4-4 4 4M2 11v3h12v-3" stroke="var(--bg)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
             Share to Stories
           </button>
@@ -745,13 +964,12 @@ function Header({ showAccount }: { showAccount?: boolean }) {
     <div className="flex items-center justify-between px-6 pt-14 pb-6">
       <div className="w-8" />
       <span className="text-base font-light tracking-[0.4em]" style={{
-        fontFamily: 'var(--font-fraunces)',
-        background: 'linear-gradient(135deg, var(--gold-bright) 0%, var(--gold) 60%, var(--gold-bright) 100%)',
-        WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+        fontFamily: 'var(--font-space)',
+        color: 'var(--text)',
       }}>beside</span>
       {showAccount
         ? <a href="/account" className="w-8 h-8 rounded-full flex items-center justify-center text-[10px]"
-            style={{ background: 'rgba(201,169,110,0.1)', color: 'var(--gold)' }}>{initial}</a>
+            style={{ background: 'rgba(196,66,42,0.08)', color: 'var(--gold)', border: '1px solid rgba(196,66,42,0.15)' }}>{initial}</a>
         : <div className="w-8" />}
     </div>
   )
@@ -763,17 +981,16 @@ function StepHeader({ label, onBack, step, total }: { label: string; onBack: () 
       <div className="flex items-center justify-between px-6 pt-14 pb-5">
         <button onClick={onBack} style={{
           width: '32px', height: '32px', borderRadius: '50%',
-          background: 'rgba(240,230,208,0.06)',
+          background: 'rgba(30,26,20,0.07)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
         }}>
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-            <path d="M10 3L5 8l5 5" stroke="rgba(240,230,208,0.6)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+            <path d="M10 3L5 8l5 5" stroke="rgba(30,26,20,0.45)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </button>
         <span className="text-base font-light tracking-[0.4em]" style={{
-          fontFamily: 'var(--font-fraunces)',
-          background: 'linear-gradient(135deg, var(--gold-bright), var(--gold))',
-          WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+          fontFamily: 'var(--font-space)',
+          color: 'var(--text)',
         }}>beside</span>
         <span className="text-[10px] tabular-nums" style={{ color: 'var(--text-3)', width: '32px', textAlign: 'right' }}>{step}/{total}</span>
       </div>
@@ -782,8 +999,8 @@ function StepHeader({ label, onBack, step, total }: { label: string; onBack: () 
         {Array.from({ length: total }).map((_, i) => (
           <div key={i} className="flex-1 rounded-full transition-all duration-500" style={{
             height: '2px',
-            background: i < step ? 'var(--gold)' : 'rgba(240,230,208,0.1)',
-            boxShadow: i === step - 1 ? '0 0 8px rgba(201,169,110,0.4)' : 'none',
+            background: i < step ? 'var(--gold)' : 'rgba(30,26,20,0.12)',
+            boxShadow: i === step - 1 ? '0 0 6px rgba(196,66,42,0.3)' : 'none',
           }} />
         ))}
       </div>
@@ -795,19 +1012,19 @@ function Pill({ gold }: { gold?: boolean }) {
   return (
     <div style={{
       width: '18px', height: '30px', borderRadius: '10px',
-      border: `1.5px solid ${gold ? '#c9a96e' : 'rgba(240,230,208,0.28)'}`,
+      border: `1.5px solid ${gold ? '#C4422A' : 'rgba(30,26,20,0.20)'}`,
       background: gold
-        ? 'linear-gradient(180deg, rgba(201,169,110,0.22) 0%, rgba(201,169,110,0.07) 100%)'
-        : 'linear-gradient(180deg, rgba(240,230,208,0.07) 0%, rgba(240,230,208,0.02) 100%)',
+        ? 'linear-gradient(180deg, rgba(196,66,42,0.14) 0%, rgba(196,66,42,0.05) 100%)'
+        : 'linear-gradient(180deg, rgba(30,26,20,0.06) 0%, rgba(30,26,20,0.02) 100%)',
       boxShadow: gold
-        ? 'inset 0 1px 0 rgba(255,255,255,0.22), 0 3px 10px rgba(0,0,0,0.35)'
-        : 'inset 0 1px 0 rgba(255,255,255,0.06)',
+        ? 'inset 0 1px 0 rgba(255,255,255,0.5), 0 2px 8px rgba(0,0,0,0.06)'
+        : 'inset 0 1px 0 rgba(255,255,255,0.6)',
       position: 'relative',
     }}>
       <div style={{
         position: 'absolute', top: '46%', left: '2px', right: '2px',
         height: '1px',
-        background: gold ? 'rgba(201,169,110,0.4)' : 'rgba(240,230,208,0.12)',
+        background: gold ? 'rgba(196,66,42,0.3)' : 'rgba(30,26,20,0.12)',
       }} />
     </div>
   )

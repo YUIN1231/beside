@@ -1,4 +1,4 @@
-import Link from 'next/link'
+﻿import Link from 'next/link'
 import Navbar from '../components/Navbar'
 
 const STEPS = [
@@ -17,7 +17,7 @@ export default function Guide() {
       <div className="flex items-center justify-between px-6 pt-14 pb-4">
         <div className="w-8" />
         <span className="text-base font-light tracking-[0.4em]" style={{
-          fontFamily: 'var(--font-fraunces)',
+          fontFamily: 'var(--font-space)',
           background: 'linear-gradient(135deg, var(--gold-bright), var(--gold))',
           WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
         }}>beside</span>
@@ -26,19 +26,19 @@ export default function Guide() {
 
       <div className="px-6 pt-6 pb-2">
         <p className="text-[11px] tracking-[0.22em] uppercase mb-2" style={{ color: 'var(--gold-dim)' }}>Guide</p>
-        <h2 className="text-2xl font-medium" style={{ fontFamily: 'var(--font-fraunces)' }}>How it works.</h2>
+        <h2 className="text-2xl font-medium" style={{ fontFamily: 'var(--font-space)' }}>How it works.</h2>
       </div>
 
       <div className="px-6 pt-6 flex flex-col">
         {STEPS.map((s, i) => (
           <div key={s.n} className="flex gap-5 pb-7 fade-up" style={{
-            borderBottom: i < STEPS.length - 1 ? '1px solid rgba(240,230,208,0.06)' : 'none',
+            borderBottom: i < STEPS.length - 1 ? '1px solid rgba(30,26,20,0.06)' : 'none',
             paddingTop: i > 0 ? '24px' : '0',
             animationDelay: `${i * 0.05}s`,
           }}>
             <span style={{ color: 'var(--text-3)', width: '20px', fontSize: '10px', flexShrink: 0, marginTop: '2px' }}>{s.n}</span>
             <div>
-              <p className="font-medium mb-1" style={{ fontFamily: 'var(--font-fraunces)' }}>{s.title}</p>
+              <p className="font-medium mb-1" style={{ fontFamily: 'var(--font-space)' }}>{s.title}</p>
               <p className="text-sm leading-relaxed" style={{ color: 'var(--text-2)' }}>{s.body}</p>
             </div>
           </div>
@@ -46,21 +46,21 @@ export default function Guide() {
       </div>
 
       <div className="mx-5 mt-8 p-5 rounded-2xl" style={{
-        background: 'linear-gradient(180deg, rgba(240,230,208,0.07) 0%, rgba(240,230,208,0.03) 100%)',
-        border: '1px solid rgba(240,230,208,0.1)',
-        boxShadow: '0 4px 20px rgba(0,0,0,0.22), inset 0 1px 0 rgba(240,230,208,0.07)',
+        background: 'linear-gradient(180deg, rgba(30,26,20,0.07) 0%, rgba(30,26,20,0.03) 100%)',
+        border: '1px solid rgba(30,26,20,0.1)',
+        boxShadow: '0 4px 20px rgba(0,0,0,0.22), inset 0 1px 0 rgba(30,26,20,0.07)',
       }}>
         <p className="text-[10px] tracking-[0.18em] uppercase mb-2" style={{ color: 'var(--gold-dim)' }}>The idea</p>
-        <p className="text-sm leading-relaxed" style={{ fontFamily: 'var(--font-fraunces)' }}>
+        <p className="text-sm leading-relaxed" style={{ fontFamily: 'var(--font-space)' }}>
           Social media lets you follow anyone. beside lets you follow only the people who were actually beside you.
         </p>
       </div>
 
       <div className="px-5 mt-8">
         <Link href="/" className="block text-center text-sm tracking-[0.06em] py-3.5 rounded-full transition-all active:scale-95" style={{
-          background: 'linear-gradient(135deg, #e8c98a 0%, #c9a96e 100%)',
-          color: '#0f0a05', fontWeight: 600,
-          boxShadow: '0 4px 20px rgba(201,169,110,0.2)',
+          background: 'linear-gradient(135deg, #d4e0ff 0%, #b8c8f0 100%)',
+          color: '#06070d', fontWeight: 600,
+          boxShadow: '0 4px 20px rgba(184,200,240,0.2)',
         }}>
           Take a capsule
         </Link>

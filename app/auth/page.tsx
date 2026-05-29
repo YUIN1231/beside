@@ -1,7 +1,8 @@
-'use client'
+﻿'use client'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { isAuthenticated, saveUser, markOnboarded } from '../lib/storage'
+import { upsertProfile } from '../lib/supabase'
 
 export default function Auth() {
   const router = useRouter()
@@ -22,8 +23,10 @@ export default function Auth() {
     if (!n) { setError('Name is required.'); return }
     if (!isValidEmail(e)) { setError('Enter a valid email.'); return }
     setLoading(true)
-    saveUser({ id: e, name: n, email: e })
+    const user = { id: e, name: n, email: e }
+    saveUser(user)
     markOnboarded()
+    upsertProfile(user).catch(() => {}) // fire-and-forget
     router.replace('/')
   }
 
@@ -33,7 +36,7 @@ export default function Auth() {
       {/* header */}
       <div className="flex items-center justify-center pt-16 pb-0">
         <span className="text-base font-light tracking-[0.4em]" style={{
-          fontFamily: 'var(--font-fraunces)',
+          fontFamily: 'var(--font-space)',
           background: 'linear-gradient(135deg, var(--gold-bright), var(--gold))',
           WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
         }}>beside</span>
@@ -45,7 +48,7 @@ export default function Auth() {
           <p className="text-[11px] tracking-[0.22em] uppercase mb-3" style={{ color: 'var(--gold-dim)' }}>
             Create account
           </p>
-          <h1 className="text-[2rem] leading-snug" style={{ fontFamily: 'var(--font-fraunces)' }}>
+          <h1 className="text-[2rem] leading-snug" style={{ fontFamily: 'var(--font-space)' }}>
             Who are you?
           </h1>
           <p className="text-sm mt-3 leading-relaxed" style={{ color: 'var(--text-2)' }}>
@@ -65,8 +68,8 @@ export default function Auth() {
               autoComplete="name"
               style={{
                 width: '100%',
-                background: 'rgba(240,230,208,0.05)',
-                border: '1px solid rgba(240,230,208,0.12)',
+                background: 'rgba(30,26,20,0.05)',
+                border: '1px solid rgba(30,26,20,0.12)',
                 borderRadius: '16px',
                 padding: '16px 18px',
                 color: 'var(--text)',
@@ -88,8 +91,8 @@ export default function Auth() {
               autoComplete="email"
               style={{
                 width: '100%',
-                background: 'rgba(240,230,208,0.05)',
-                border: '1px solid rgba(240,230,208,0.12)',
+                background: 'rgba(30,26,20,0.05)',
+                border: '1px solid rgba(30,26,20,0.12)',
                 borderRadius: '16px',
                 padding: '16px 18px',
                 color: 'var(--text)',
@@ -110,10 +113,10 @@ export default function Auth() {
             disabled={loading}
             className="w-full py-4 rounded-full text-sm tracking-[0.06em] transition-all active:scale-95 disabled:opacity-50"
             style={{
-              background: 'linear-gradient(135deg, #e8c98a 0%, #c9a96e 100%)',
-              color: '#0f0a05',
+              background: 'linear-gradient(135deg, #d4e0ff 0%, #b8c8f0 100%)',
+              color: '#06070d',
               fontWeight: 600,
-              boxShadow: '0 4px 24px rgba(201,169,110,0.22)',
+              boxShadow: '0 4px 24px rgba(184,200,240,0.22)',
             }}
           >
             {loading ? 'Setting up…' : 'Get started'}

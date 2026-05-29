@@ -42,24 +42,24 @@ export async function buildShareImage(cap: Capsule): Promise<Blob> {
   ctx.textBaseline = 'alphabetic'
 
   // ── Background ────────────────────────────────────────────────
-  ctx.fillStyle = '#090602'
+  ctx.fillStyle = '#06070d'
   ctx.fillRect(0, 0, W, H)
 
-  // warm top-to-bottom gradient
+  // dark atmospheric gradient
   const bg = ctx.createLinearGradient(0, 0, 0, H)
-  bg.addColorStop(0,   'rgba(24,14,3,0.75)')
-  bg.addColorStop(0.5, 'rgba(0,0,0,0)')
-  bg.addColorStop(1,   'rgba(4,2,1,0.9)')
+  bg.addColorStop(0,   'rgba(10, 12, 28, 0.8)')
+  bg.addColorStop(0.5, 'rgba(0, 0, 0, 0)')
+  bg.addColorStop(1,   'rgba(4, 4, 12, 0.9)')
   ctx.fillStyle = bg
   ctx.fillRect(0, 0, W, H)
 
   const CX = W / 2
   const CY = H * 0.40
 
-  // center glow
+  // subtle crystal glow at center
   const glow = ctx.createRadialGradient(CX, CY, 0, CX, CY, 500)
-  glow.addColorStop(0, 'rgba(201,169,110,0.13)')
-  glow.addColorStop(1, 'rgba(201,169,110,0)')
+  glow.addColorStop(0, 'rgba(184, 200, 240, 0.1)')
+  glow.addColorStop(1, 'rgba(184, 200, 240, 0)')
   ctx.fillStyle = glow
   ctx.fillRect(0, 0, W, H)
 
@@ -71,46 +71,47 @@ export async function buildShareImage(cap: Capsule): Promise<Blob> {
   for (let i = 0; i < gd.data.length; i += 4) {
     const v = Math.random() * 255
     gd.data[i] = gd.data[i+1] = gd.data[i+2] = v
-    gd.data[i+3] = 11
+    gd.data[i+3] = 9
   }
   gc.putImageData(gd, 0, 0)
   ctx.drawImage(grain, 0, 0)
 
   // ── "beside" wordmark ─────────────────────────────────────────
   ctx.font = '500 54px Georgia, serif'
-  ctx.fillStyle = '#c9a96e'
+  ctx.fillStyle = '#d4e0ff'
   ctx.textAlign = 'center'
   spacedText(ctx, 'beside', CX, 222, 20)
 
   ctx.beginPath()
   ctx.moveTo(CX - 100, 258); ctx.lineTo(CX + 100, 258)
-  ctx.strokeStyle = 'rgba(201,169,110,0.18)'
+  ctx.strokeStyle = 'rgba(184,200,240,0.14)'
   ctx.lineWidth = 1; ctx.stroke()
 
   // ── Ring illustration ─────────────────────────────────────────
   const R = 315
 
-  // outer orbit dots
+  // outer orbit dashes
   ctx.save()
   ctx.setLineDash([5, 26])
   ctx.beginPath()
   ctx.arc(CX, CY, R + 30, 0, Math.PI * 2)
-  ctx.strokeStyle = 'rgba(201,169,110,0.07)'
+  ctx.strokeStyle = 'rgba(200,210,255,0.06)'
   ctx.lineWidth = 1.5; ctx.stroke()
   ctx.restore()
 
   // mid ring
   ctx.beginPath()
   ctx.arc(CX, CY, R + 10, 0, Math.PI * 2)
-  ctx.strokeStyle = 'rgba(201,169,110,0.05)'
+  ctx.strokeStyle = 'rgba(200,210,255,0.04)'
   ctx.lineWidth = 1; ctx.stroke()
 
-  // gradient arc (≈200°)
+  // iridescent gradient arc
   ctx.save()
   const arcG = ctx.createLinearGradient(CX-R, CY-R, CX+R, CY+R)
-  arcG.addColorStop(0,   '#e8c98a')
-  arcG.addColorStop(0.45,'#c9a96e')
-  arcG.addColorStop(1,   'rgba(201,169,110,0)')
+  arcG.addColorStop(0,    'rgba(255,255,255,0.85)')
+  arcG.addColorStop(0.35, 'rgba(184,200,240,0.75)')
+  arcG.addColorStop(0.7,  'rgba(160,225,210,0.6)')
+  arcG.addColorStop(1,    'rgba(200,210,255,0)')
   ctx.beginPath()
   ctx.arc(CX, CY, R, -Math.PI * 0.38, Math.PI * 0.72)
   ctx.strokeStyle = arcG; ctx.lineWidth = 2.5; ctx.stroke()
@@ -119,36 +120,51 @@ export async function buildShareImage(cap: Capsule): Promise<Blob> {
   // inner dark disk
   ctx.beginPath()
   ctx.arc(CX, CY, R - 18, 0, Math.PI * 2)
-  ctx.fillStyle = '#0c0703'; ctx.fill()
+  ctx.fillStyle = '#07080f'; ctx.fill()
 
-  // inner radial glow
+  // inner crystal glow
   const ig = ctx.createRadialGradient(CX, CY, 0, CX, CY, R - 18)
-  ig.addColorStop(0, 'rgba(201,169,110,0.1)')
-  ig.addColorStop(0.65, 'rgba(201,169,110,0.03)')
+  ig.addColorStop(0, 'rgba(184,200,240,0.08)')
+  ig.addColorStop(0.65, 'rgba(184,200,240,0.02)')
   ig.addColorStop(1, 'rgba(0,0,0,0)')
   ctx.fillStyle = ig
   ctx.beginPath(); ctx.arc(CX, CY, R - 18, 0, Math.PI * 2); ctx.fill()
 
-  // ── Pill icon ─────────────────────────────────────────────────
+  // ── Glass pill icon ───────────────────────────────────────────
   const PW = 52, PH = 88, PR = 26
-  roundRect(ctx, CX - PW/2, CY - PH/2, PW, PH, PR)
-  ctx.strokeStyle = '#c9a96e'; ctx.lineWidth = 3; ctx.stroke()
 
+  // glass body
   const pg = ctx.createLinearGradient(CX - PW/2, CY - PH/2, CX - PW/2, CY + PH/2)
-  pg.addColorStop(0, 'rgba(201,169,110,0.1)')
-  pg.addColorStop(1, 'rgba(201,169,110,0.05)')
+  pg.addColorStop(0, 'rgba(255,255,255,0.18)')
+  pg.addColorStop(0.5, 'rgba(184,200,240,0.08)')
+  pg.addColorStop(1, 'rgba(184,200,240,0.04)')
   roundRect(ctx, CX - PW/2+1, CY - PH/2+1, PW-2, PH-2, PR-1)
   ctx.fillStyle = pg; ctx.fill()
 
+  // glass border (iridescent)
+  const pb = ctx.createLinearGradient(CX - PW/2, CY - PH/2, CX + PW/2, CY + PH/2)
+  pb.addColorStop(0, 'rgba(255,255,255,0.7)')
+  pb.addColorStop(0.5, 'rgba(184,200,240,0.55)')
+  pb.addColorStop(1, 'rgba(160,225,210,0.4)')
+  roundRect(ctx, CX - PW/2, CY - PH/2, PW, PH, PR)
+  ctx.strokeStyle = pb; ctx.lineWidth = 2.5; ctx.stroke()
+
+  // inner highlight
+  ctx.beginPath()
+  ctx.moveTo(CX - PW/2 + 8, CY - PH/2 + 8)
+  ctx.lineTo(CX + PW/2 - 8, CY - PH/2 + 8)
+  ctx.strokeStyle = 'rgba(255,255,255,0.4)'; ctx.lineWidth = 1.5; ctx.stroke()
+
+  // seam line
   ctx.beginPath()
   ctx.moveTo(CX - PW/2+6, CY); ctx.lineTo(CX + PW/2-6, CY)
-  ctx.strokeStyle = 'rgba(201,169,110,0.38)'; ctx.lineWidth = 2; ctx.stroke()
+  ctx.strokeStyle = 'rgba(200,215,255,0.3)'; ctx.lineWidth = 1.5; ctx.stroke()
 
   // ── City ──────────────────────────────────────────────────────
   const baseY = CY + R + 100
 
   ctx.font = '26px sans-serif'
-  ctx.fillStyle = 'rgba(201,169,110,0.42)'
+  ctx.fillStyle = 'rgba(184,200,240,0.4)'
   ctx.textAlign = 'center'
   spacedText(ctx, 'captured in', CX, baseY - 4, 4)
 
@@ -159,19 +175,19 @@ export async function buildShareImage(cap: Capsule): Promise<Blob> {
   if (cw > W - 100) {
     ctx.font = `bold ${Math.floor(96 * (W - 100) / cw)}px Georgia, serif`
   }
-  ctx.fillStyle = '#f0e6d0'
+  ctx.fillStyle = '#e8eaf6'
   ctx.fillText(cityUp, CX, baseY + 108)
 
   // ── Tagline ───────────────────────────────────────────────────
   ctx.font = 'italic 40px Georgia, serif'
-  ctx.fillStyle = 'rgba(240,230,208,0.32)'
+  ctx.fillStyle = 'rgba(200,210,255,0.28)'
   ctx.fillText('Something is sealed inside.', CX, baseY + 190)
 
   // ── Divider ───────────────────────────────────────────────────
   const divY = baseY + 268
   ctx.beginPath()
   ctx.moveTo(CX - 230, divY); ctx.lineTo(CX + 230, divY)
-  ctx.strokeStyle = 'rgba(240,230,208,0.07)'; ctx.lineWidth = 1; ctx.stroke()
+  ctx.strokeStyle = 'rgba(200,210,255,0.07)'; ctx.lineWidth = 1; ctx.stroke()
 
   // ── Dates ─────────────────────────────────────────────────────
   const opensDate = new Date(cap.opensAt!)
@@ -179,11 +195,11 @@ export async function buildShareImage(cap: Capsule): Promise<Blob> {
   const sealedStr = new Date(cap.sealedAt!).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 
   ctx.font = '28px sans-serif'
-  ctx.fillStyle = 'rgba(138,112,85,0.65)'
+  ctx.fillStyle = 'rgba(184,200,240,0.38)'
   ctx.fillText(`sealed  ${sealedStr}`, CX, divY + 70)
 
   ctx.font = '38px Georgia, serif'
-  ctx.fillStyle = '#c9a96e'
+  ctx.fillStyle = '#b8c8f0'
   ctx.fillText(`opens  ${opensStr}`, CX, divY + 144)
 
   // ── People circles ────────────────────────────────────────────
@@ -200,35 +216,35 @@ export async function buildShareImage(cap: Capsule): Promise<Blob> {
     initials.forEach((init, i) => {
       const ax = startAX + i * gap
       ctx.beginPath(); ctx.arc(ax, ay, AR, 0, Math.PI * 2)
-      ctx.fillStyle = '#150e07'; ctx.fill()
+      ctx.fillStyle = '#0c0d1a'; ctx.fill()
 
       const rg = ctx.createLinearGradient(ax-AR, ay-AR, ax+AR, ay+AR)
-      rg.addColorStop(0, i === 0 ? '#e8c98a' : 'rgba(201,169,110,0.3)')
-      rg.addColorStop(1, i === 0 ? '#c9a96e' : 'rgba(201,169,110,0.12)')
+      rg.addColorStop(0, i === 0 ? 'rgba(255,255,255,0.7)' : 'rgba(184,200,240,0.3)')
+      rg.addColorStop(1, i === 0 ? 'rgba(184,200,240,0.6)' : 'rgba(184,200,240,0.12)')
       ctx.strokeStyle = rg; ctx.lineWidth = 2
       ctx.beginPath(); ctx.arc(ax, ay, AR, 0, Math.PI * 2); ctx.stroke()
 
       ctx.font = '22px Georgia, serif'
       ctx.textBaseline = 'middle'
-      ctx.fillStyle = i === 0 ? '#e8c98a' : '#c9a96e'
+      ctx.fillStyle = i === 0 ? '#d4e0ff' : '#b8c8f0'
       ctx.fillText(init, ax, ay)
       ctx.textBaseline = 'alphabetic'
     })
 
     ctx.font = '28px sans-serif'
-    ctx.fillStyle = 'rgba(240,230,208,0.22)'
+    ctx.fillStyle = 'rgba(200,210,255,0.22)'
     ctx.fillText(`${initials.length} people sealed this`, CX, divY + 326)
   }
 
   // ── Footer ────────────────────────────────────────────────────
   ctx.font = '25px sans-serif'
-  ctx.fillStyle = 'rgba(201,169,110,0.22)'
+  ctx.fillStyle = 'rgba(184,200,240,0.2)'
   ctx.fillText('beside-gules.vercel.app', CX, H - 108)
 
-  // ── Final dark vignette ───────────────────────────────────────
+  // ── Final vignette ────────────────────────────────────────────
   const vig = ctx.createRadialGradient(CX, H/2, H*0.28, CX, H/2, H*0.75)
   vig.addColorStop(0, 'rgba(0,0,0,0)')
-  vig.addColorStop(1, 'rgba(0,0,0,0.35)')
+  vig.addColorStop(1, 'rgba(0,0,0,0.4)')
   ctx.fillStyle = vig
   ctx.fillRect(0, 0, W, H)
 

@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 
@@ -112,7 +112,7 @@ export default function Onboarding() {
           </p>
           <h1
             className="text-[1.85rem] leading-snug whitespace-pre-line"
-            style={{ fontFamily: 'var(--font-fraunces)', color: 'var(--text)' }}
+            style={{ fontFamily: 'var(--font-space)', color: 'var(--text)' }}
           >
             {s.heading}
           </h1>

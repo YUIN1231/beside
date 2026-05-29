@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 import { useEffect, useRef } from 'react'
 
 interface Props {
@@ -15,7 +15,7 @@ export default function Waveform({
   frozen = false,
   frozenData,
   onFreezeData,
-  color = '#c9a96e',
+  color = '#b8c8f0',
   height = 72,
 }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null)

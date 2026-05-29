@@ -1,9 +1,10 @@
-'use client'
+﻿'use client'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import Navbar from '../components/Navbar'
 import { getCapsules } from '../lib/storage'
 import { useRequireAuth } from '../lib/auth'
+import { fetchMyCapsules } from '../lib/supabase'
 import type { Capsule } from '../lib/types'
 
 function daysUntil(iso?: string) {
@@ -45,12 +46,12 @@ function CapsuleStoryRing({ capsule, index }: { capsule: Capsule; index: number 
               {/* pill icon */}
               <div style={{
                 width: '12px', height: '20px', borderRadius: '6px',
-                border: `1px solid ${isOpen ? 'var(--gold)' : 'rgba(240,230,208,0.25)'}`,
+                border: `1px solid ${isOpen ? 'var(--gold)' : 'rgba(30,26,20,0.25)'}`,
                 position: 'relative',
               }}>
                 <div style={{
                   position: 'absolute', top: '46%', left: 0, right: 0, height: '1px',
-                  background: isOpen ? 'var(--gold-dim)' : 'rgba(240,230,208,0.15)',
+                  background: isOpen ? 'var(--gold-dim)' : 'rgba(30,26,20,0.15)',
                 }} />
               </div>
             </div>
@@ -59,18 +60,18 @@ function CapsuleStoryRing({ capsule, index }: { capsule: Capsule; index: number 
       ) : (
         <div style={{
           width: '64px', height: '64px', borderRadius: '50%',
-          background: 'rgba(240,230,208,0.04)',
-          border: '1.5px dashed rgba(240,230,208,0.12)',
+          background: 'rgba(30,26,20,0.04)',
+          border: '1.5px dashed rgba(30,26,20,0.12)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
         }}>
           <div style={{
             width: '12px', height: '20px', borderRadius: '6px',
-            border: '1px solid rgba(240,230,208,0.18)',
+            border: '1px solid rgba(30,26,20,0.18)',
             position: 'relative',
           }}>
             <div style={{
               position: 'absolute', top: '46%', left: 0, right: 0, height: '1px',
-              background: 'rgba(240,230,208,0.1)',
+              background: 'rgba(30,26,20,0.1)',
             }} />
           </div>
         </div>
@@ -94,7 +95,20 @@ function CapsuleStoryRing({ capsule, index }: { capsule: Capsule; index: number 
 export default function Capsules() {
   useRequireAuth()
   const [capsules, setCapsules] = useState<Capsule[]>([])
-  useEffect(() => { setCapsules(getCapsules()) }, [])
+
+  useEffect(() => {
+    // Load from localStorage immediately
+    setCapsules(getCapsules())
+    // Then hydrate from Supabase
+    const stored = typeof window !== 'undefined'
+      ? JSON.parse(localStorage.getItem('beside_user') ?? 'null')
+      : null
+    if (stored?.email) {
+      fetchMyCapsules(stored.email).then(remote => {
+        if (remote.length > 0) setCapsules(remote)
+      }).catch(() => {})
+    }
+  }, [])
 
   const groups = byCity(capsules)
 
@@ -105,7 +119,7 @@ export default function Capsules() {
       <div className="flex items-center justify-between px-6 pt-14 pb-4">
         <div className="w-8" />
         <span className="text-base font-light tracking-[0.4em]" style={{
-          fontFamily: 'var(--font-fraunces)',
+          fontFamily: 'var(--font-space)',
           background: 'linear-gradient(135deg, var(--gold-bright), var(--gold))',
           WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
         }}>beside</span>
@@ -117,24 +131,24 @@ export default function Capsules() {
           {/* empty story ring placeholder */}
           <div style={{
             width: '80px', height: '80px', borderRadius: '50%',
-            background: 'rgba(240,230,208,0.03)',
-            border: '1.5px dashed rgba(240,230,208,0.1)',
+            background: 'rgba(30,26,20,0.03)',
+            border: '1.5px dashed rgba(30,26,20,0.1)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}>
             <div style={{
               width: '16px', height: '26px', borderRadius: '9px',
-              border: '1px solid rgba(240,230,208,0.15)',
+              border: '1px solid rgba(30,26,20,0.15)',
               position: 'relative',
             }}>
-              <div style={{ position: 'absolute', top: '46%', left: 0, right: 0, height: '1px', background: 'rgba(240,230,208,0.1)' }} />
+              <div style={{ position: 'absolute', top: '46%', left: 0, right: 0, height: '1px', background: 'rgba(30,26,20,0.1)' }} />
             </div>
           </div>
           <div>
             <p className="text-sm mb-3" style={{ color: 'var(--text-2)' }}>No capsules yet.</p>
             <Link href="/" className="text-xs tracking-[0.08em] px-6 py-3 rounded-full" style={{
-              background: 'rgba(201,169,110,0.1)',
+              background: 'rgba(184,200,240,0.1)',
               color: 'var(--gold)',
-              border: '1px solid rgba(201,169,110,0.2)',
+              border: '1px solid rgba(184,200,240,0.2)',
             }}>
               Take your first capsule
             </Link>
@@ -143,7 +157,7 @@ export default function Capsules() {
       ) : (
         <>
           {/* ── Stories row ── */}
-          <div className="flex gap-4 px-6 pb-6 no-scrollbar overflow-x-auto" style={{ borderBottom: '1px solid rgba(240,230,208,0.06)' }}>
+          <div className="flex gap-4 px-6 pb-6 no-scrollbar overflow-x-auto" style={{ borderBottom: '1px solid rgba(30,26,20,0.06)' }}>
             {capsules.map((c, i) => (
               <CapsuleStoryRing key={c.id} capsule={c} index={i} />
             ))}
@@ -156,8 +170,8 @@ export default function Capsules() {
 
                 {/* city label */}
                 <div className="flex items-center gap-2 mb-4 px-1">
-                  <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--gold)', boxShadow: '0 0 8px rgba(201,169,110,0.5)', flexShrink: 0 }} />
-                  <span className="text-sm font-medium" style={{ fontFamily: 'var(--font-fraunces)' }}>{city}</span>
+                  <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--gold)', boxShadow: '0 0 8px rgba(184,200,240,0.5)', flexShrink: 0 }} />
+                  <span className="text-sm font-medium" style={{ fontFamily: 'var(--font-space)' }}>{city}</span>
                 </div>
 
                 {/* capsule cards */}
@@ -170,12 +184,12 @@ export default function Capsules() {
                     return (
                       <Link key={c.id} href={`/capsules/${c.id}`} className="block rounded-2xl overflow-hidden transition-all active:scale-[0.98]" style={{
                         background: isOpen
-                          ? 'linear-gradient(180deg, rgba(201,169,110,0.09) 0%, rgba(201,169,110,0.03) 100%)'
-                          : 'linear-gradient(180deg, rgba(240,230,208,0.07) 0%, rgba(240,230,208,0.025) 100%)',
-                        border: `1px solid ${isOpen ? 'rgba(201,169,110,0.22)' : 'rgba(240,230,208,0.1)'}`,
+                          ? 'linear-gradient(180deg, rgba(184,200,240,0.09) 0%, rgba(184,200,240,0.03) 100%)'
+                          : 'linear-gradient(180deg, rgba(30,26,20,0.07) 0%, rgba(30,26,20,0.025) 100%)',
+                        border: `1px solid ${isOpen ? 'rgba(184,200,240,0.22)' : 'rgba(30,26,20,0.1)'}`,
                         boxShadow: isOpen
-                          ? '0 4px 20px rgba(0,0,0,0.25), inset 0 1px 0 rgba(201,169,110,0.1)'
-                          : '0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(240,230,208,0.06)',
+                          ? '0 4px 20px rgba(0,0,0,0.25), inset 0 1px 0 rgba(184,200,240,0.1)'
+                          : '0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(30,26,20,0.06)',
                       }}>
                         <div className="flex items-center gap-4 p-4">
                           {/* mini story ring */}
@@ -188,12 +202,12 @@ export default function Capsules() {
                               }}>
                                 <div style={{
                                   width: '8px', height: '14px', borderRadius: '4px',
-                                  border: `1px solid ${isOpen ? 'var(--gold)' : 'rgba(240,230,208,0.2)'}`,
+                                  border: `1px solid ${isOpen ? 'var(--gold)' : 'rgba(30,26,20,0.2)'}`,
                                   position: 'relative',
                                 }}>
                                   <div style={{
                                     position: 'absolute', top: '46%', left: 0, right: 0, height: '1px',
-                                    background: isOpen ? 'var(--gold-dim)' : 'rgba(240,230,208,0.1)',
+                                    background: isOpen ? 'var(--gold-dim)' : 'rgba(30,26,20,0.1)',
                                   }} />
                                 </div>
                               </div>
@@ -214,7 +228,7 @@ export default function Capsules() {
                           {isSealed && (
                             <span style={{
                               fontSize: '11px', color: 'var(--text-3)',
-                              background: 'rgba(240,230,208,0.05)',
+                              background: 'rgba(30,26,20,0.05)',
                               padding: '4px 10px', borderRadius: '20px',
                               flexShrink: 0,
                             }}>{days}d</span>
@@ -222,7 +236,7 @@ export default function Capsules() {
                           {isOpen && (
                             <span style={{
                               fontSize: '11px', color: 'var(--gold)',
-                              background: 'rgba(201,169,110,0.08)',
+                              background: 'rgba(184,200,240,0.08)',
                               padding: '4px 10px', borderRadius: '20px',
                               flexShrink: 0,
                             }}>Open</span>
@@ -238,8 +252,8 @@ export default function Capsules() {
                             {[{ icon: '◉', label: 'voice' }, { icon: '□', label: 'photo' }, { icon: '▶', label: 'video' }].map(({ icon, label }) => (
                               <div key={label} className="flex-1 rounded-xl flex items-center justify-center gap-1.5" style={{
                                 height: '40px',
-                                background: 'rgba(240,230,208,0.06)',
-                                border: '1px solid rgba(240,230,208,0.1)',
+                                background: 'rgba(30,26,20,0.06)',
+                                border: '1px solid rgba(30,26,20,0.1)',
                               }}>
                                 <span style={{ fontSize: '11px', color: 'var(--gold)', opacity: 0.7 }}>{icon}</span>
                               </div>

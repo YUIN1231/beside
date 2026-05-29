@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import Navbar from '../components/Navbar'
@@ -22,7 +22,7 @@ export default function Map() {
       <div className="flex items-center justify-between px-6 pt-14 pb-4">
         <div className="w-8" />
         <span className="text-base font-light tracking-[0.4em]" style={{
-          fontFamily: 'var(--font-fraunces)',
+          fontFamily: 'var(--font-space)',
           background: 'linear-gradient(135deg, var(--gold-bright), var(--gold))',
           WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
         }}>beside</span>
@@ -31,7 +31,7 @@ export default function Map() {
 
       <div className="px-6 pt-6 pb-4">
         <p className="text-[11px] tracking-[0.22em] uppercase mb-2" style={{ color: 'var(--gold-dim)' }}>Map</p>
-        <h2 className="text-2xl font-medium" style={{ fontFamily: 'var(--font-fraunces)' }}>Where you've been.</h2>
+        <h2 className="text-2xl font-medium" style={{ fontFamily: 'var(--font-space)' }}>Where you've been.</h2>
       </div>
 
       <div className="px-6 pt-4 flex flex-col">
@@ -46,12 +46,12 @@ export default function Map() {
                 <div className="flex flex-col items-center flex-shrink-0" style={{ width: '10px' }}>
                   <div style={{
                     width: '10px', height: '10px', borderRadius: '50%',
-                    background: isOpen ? 'var(--gold)' : 'rgba(240,230,208,0.15)',
-                    boxShadow: isOpen ? '0 0 10px rgba(201,169,110,0.5)' : 'none',
+                    background: isOpen ? 'var(--gold)' : 'rgba(30,26,20,0.15)',
+                    boxShadow: isOpen ? '0 0 10px rgba(184,200,240,0.5)' : 'none',
                     marginTop: '3px', flexShrink: 0,
                   }} />
                   {i < capsules.length - 1 && (
-                    <div style={{ width: '1px', flex: 1, background: 'rgba(240,230,208,0.07)', minHeight: '28px', marginTop: '4px' }} />
+                    <div style={{ width: '1px', flex: 1, background: 'rgba(30,26,20,0.07)', minHeight: '28px', marginTop: '4px' }} />
                   )}
                 </div>
                 <div className="flex-1">
@@ -73,12 +73,12 @@ export default function Map() {
       </div>
 
       <div className="mx-5 mt-4 p-5 rounded-2xl" style={{
-        background: 'linear-gradient(180deg, rgba(240,230,208,0.07) 0%, rgba(240,230,208,0.03) 100%)',
-        border: '1px solid rgba(240,230,208,0.1)',
-        boxShadow: '0 4px 20px rgba(0,0,0,0.22), inset 0 1px 0 rgba(240,230,208,0.07)',
+        background: 'linear-gradient(180deg, rgba(30,26,20,0.07) 0%, rgba(30,26,20,0.03) 100%)',
+        border: '1px solid rgba(30,26,20,0.1)',
+        boxShadow: '0 4px 20px rgba(0,0,0,0.22), inset 0 1px 0 rgba(30,26,20,0.07)',
       }}>
         <p className="text-[10px] tracking-[0.18em] uppercase mb-2" style={{ color: 'var(--gold-dim)' }}>The rule</p>
-        <p className="text-sm font-light leading-relaxed" style={{ fontFamily: 'var(--font-fraunces)' }}>
+        <p className="text-sm font-light leading-relaxed" style={{ fontFamily: 'var(--font-space)' }}>
           You can only follow people you've physically been beside.
         </p>
       </div>
