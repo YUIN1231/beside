@@ -338,7 +338,7 @@ export default function Home() {
           </div>
           <div className="fade-up flex flex-col gap-3">
             <p className="text-[11px] tracking-[0.22em] uppercase" style={{ color: 'var(--gold-dim)' }}>Sealed</p>
-            <p className="text-[3.5rem] leading-none" style={{ fontFamily: 'var(--font-space)', color: 'var(--gold)' }}>{days}</p>
+            <p style={{ fontFamily: 'var(--font-display)', fontSize: '5rem', lineHeight: 1, color: 'var(--gold)', fontStyle: 'italic' }}>{days}</p>
             <p className="text-sm" style={{ color: 'var(--text-2)' }}>days until it opens</p>
             <p className="text-xs mt-1" style={{ color: 'var(--text-3)' }}>{sealedCap.city}</p>
           </div>
@@ -367,19 +367,14 @@ export default function Home() {
           </div>
           <div className="fade-up flex flex-col gap-3">
             <p className="text-[11px] tracking-[0.22em] uppercase" style={{ color: 'var(--gold)' }}>Ready</p>
-            <h2 className="text-3xl" style={{ fontFamily: 'var(--font-space)' }}>Your capsule is open.</h2>
+            <h2 className="text-3xl" style={{ fontFamily: 'var(--font-display)', fontStyle: 'italic', fontWeight: 400 }}>Your capsule is open.</h2>
             <p className="text-sm" style={{ color: 'var(--text-2)' }}>{sealedCap.city}</p>
           </div>
           <button
             onClick={() => router.push(`/capsules/${sealedCap.id}`)}
-            className="text-sm tracking-[0.06em] px-10 py-3.5 rounded-full transition-all duration-300 active:scale-95"
-            style={{
-              background: 'var(--gold)',
-              color: 'var(--bg)', fontWeight: 600,
-              boxShadow: '0 4px 20px rgba(196,66,42,0.22)',
-            }}
+            style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: 'var(--gold)', fontSize: '1.25rem', fontFamily: 'var(--font-display)', fontStyle: 'italic' }}
           >
-            Open it
+            Open it →
           </button>
         </div>
         <Navbar active="home" />
@@ -417,8 +412,8 @@ export default function Home() {
               <p className="text-[11px] tracking-[0.22em] uppercase" style={{ color: 'var(--gold-dim)' }}>
                 {geo?.city ?? '···'} · {new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
               </p>
-              <h1 className="text-[2.2rem] leading-[1.2]" style={{ fontFamily: 'var(--font-space)' }}>
-                Who's beside you<br />tonight?
+              <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '2.6rem', lineHeight: 1.1, fontStyle: 'italic', fontWeight: 400 }}>
+                Who's beside<br />you tonight?
               </h1>
             </div>
 
@@ -431,9 +426,10 @@ export default function Home() {
             ) : (
               <button
                 onClick={() => setStep('tutorial')}
-                className="fade-up-3 text-sm tracking-[0.06em] px-10 py-3.5 rounded-full transition-all duration-300 active:scale-95 btn-gold"
+                className="fade-up-3"
+                style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: 'var(--gold)', fontSize: '1.125rem', fontFamily: 'var(--font-display)', fontStyle: 'italic' }}
               >
-                Take a capsule
+                Take a capsule →
               </button>
             )}
           </div>
@@ -447,7 +443,7 @@ export default function Home() {
           <Header />
           <div className="flex-1 flex flex-col items-center justify-center px-6 pb-20 gap-8">
             <div className="fade-up text-center">
-              <h1 className="text-[1.9rem] leading-tight mb-2" style={{ fontFamily: 'var(--font-space)' }}>Here's the drill.</h1>
+              <h1 className="text-[1.9rem] leading-tight mb-2" style={{ fontFamily: 'var(--font-display)', fontStyle: 'italic', fontWeight: 400 }}>Here's the drill.</h1>
               <p className="text-sm" style={{ color: 'var(--text-2)' }}>4 steps. One take each. Sealed for a month.</p>
             </div>
 
@@ -540,9 +536,9 @@ export default function Home() {
             <div className="fade-up-3 flex flex-col items-center gap-3">
               <button
                 onClick={() => setStep('voice')}
-                className="text-sm tracking-[0.06em] px-12 py-4 rounded-full transition-all duration-300 active:scale-95 btn-gold"
+                style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: 'var(--gold)', fontSize: '1.125rem', fontFamily: 'var(--font-display)', fontStyle: 'italic' }}
               >
-                Start
+                Start →
               </button>
             </div>
           </div>
@@ -555,7 +551,7 @@ export default function Home() {
           <StepHeader label="Voice" onBack={() => setStep('landing')} step={1} total={4} />
           <div className="flex-1 flex flex-col items-center justify-center px-8 gap-8">
             <div className="fade-up text-center">
-              <h2 className="text-3xl mb-2" style={{ fontFamily: 'var(--font-space)' }}>Say something.</h2>
+              <h2 className="text-3xl mb-2" style={{ fontFamily: 'var(--font-display)', fontStyle: 'italic', fontWeight: 400 }}>Say something.</h2>
               <p className="text-sm" style={{ color: 'var(--text-2)' }}>One take. No edits.</p>
             </div>
 
@@ -611,8 +607,8 @@ export default function Home() {
             </p>
 
             {audioBlob && !recording && (
-              <button onClick={() => setStep('photo')} className="fade-up text-sm tracking-[0.08em] px-10 py-3.5 rounded-full transition-all duration-300 active:scale-95" style={{ background: 'var(--gold)', color: 'var(--bg)' }}>
-                Continue
+              <button onClick={() => setStep('photo')} className="fade-up" style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: 'var(--gold)', fontSize: '1.125rem', fontFamily: 'var(--font-display)', fontStyle: 'italic' }}>
+                Continue →
               </button>
             )}
           </div>
@@ -625,7 +621,7 @@ export default function Home() {
           <StepHeader label="Photo" onBack={() => setStep('voice')} step={2} total={4} />
           <div className="flex-1 flex flex-col items-center justify-center px-8 gap-8">
             <div className="fade-up text-center">
-              <h2 className="text-3xl mb-2" style={{ fontFamily: 'var(--font-space)' }}>Who's beside you?</h2>
+              <h2 className="text-3xl mb-2" style={{ fontFamily: 'var(--font-display)', fontStyle: 'italic', fontWeight: 400 }}>Who's beside you?</h2>
               <p className="text-sm" style={{ color: 'var(--text-2)' }}>One shot. Make it real.</p>
             </div>
 
@@ -691,8 +687,8 @@ export default function Home() {
                 </div>
                 {!developing && (
                   <div className="flex gap-3">
-                    <button onClick={() => { setPhotoUrl(null) }} className="text-xs tracking-[0.1em] px-6 py-3 rounded-full" style={{ border: '1px solid var(--border-2)', color: 'var(--text-2)' }}>Retake</button>
-                    <button onClick={() => setStep('video')} className="text-sm tracking-[0.08em] px-10 py-3 rounded-full active:scale-95" style={{ background: 'var(--gold)', color: 'var(--bg)' }}>Continue</button>
+                    <button onClick={() => { setPhotoUrl(null) }} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: 'var(--text-3)', fontSize: '0.875rem' }}>Retake</button>
+                    <button onClick={() => setStep('video')} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: 'var(--gold)', fontSize: '1.125rem', fontFamily: 'var(--font-display)', fontStyle: 'italic' }}>Continue →</button>
                   </div>
                 )}
               </div>
@@ -708,7 +704,7 @@ export default function Home() {
           <StepHeader label="Video" onBack={() => setStep('photo')} step={3} total={4} />
           <div className="flex-1 flex flex-col items-center justify-center px-8 gap-8">
             <div className="fade-up text-center">
-              <h2 className="text-3xl mb-2" style={{ fontFamily: 'var(--font-space)' }}>Last one.</h2>
+              <h2 className="text-3xl mb-2" style={{ fontFamily: 'var(--font-display)', fontStyle: 'italic', fontWeight: 400 }}>Last one.</h2>
               <p className="text-sm" style={{ color: 'var(--text-2)' }}>10 seconds. Just be here.</p>
             </div>
 
@@ -767,8 +763,8 @@ export default function Home() {
                   <video src={URL.createObjectURL(videoBlob)} controls style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 </div>
                 <div className="flex gap-3">
-                  <button onClick={() => { setVideoBlob(null); setVidProgress(0) }} className="text-xs tracking-[0.1em] px-6 py-3 rounded-full" style={{ border: '1px solid var(--border-2)', color: 'var(--text-2)' }}>Retake</button>
-                  <button onClick={() => setStep('tag')} className="text-sm tracking-[0.08em] px-10 py-3 rounded-full active:scale-95" style={{ background: 'var(--gold)', color: 'var(--bg)' }}>Continue</button>
+                  <button onClick={() => { setVideoBlob(null); setVidProgress(0) }} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: 'var(--text-3)', fontSize: '0.875rem' }}>Retake</button>
+                  <button onClick={() => setStep('tag')} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: 'var(--gold)', fontSize: '1.125rem', fontFamily: 'var(--font-display)', fontStyle: 'italic' }}>Continue →</button>
                 </div>
               </div>
             )}
@@ -783,7 +779,7 @@ export default function Home() {
           <div className="flex-1 flex flex-col px-8 pt-8 gap-6 overflow-y-auto pb-8">
 
             <div className="fade-up">
-              <h2 className="text-3xl mb-2" style={{ fontFamily: 'var(--font-space)' }}>Who was there?</h2>
+              <h2 className="text-3xl mb-2" style={{ fontFamily: 'var(--font-display)', fontStyle: 'italic', fontWeight: 400 }}>Who was there?</h2>
               <p className="text-sm leading-relaxed" style={{ color: 'var(--text-2)' }}>
                 Share the QR so people can join instantly.
               </p>
@@ -845,8 +841,8 @@ export default function Home() {
             )}
 
             <div className="flex flex-col gap-3">
-              <button onClick={() => setStep('seal')} className="w-full py-4 rounded-full text-sm tracking-[0.08em] active:scale-95" style={{ background: 'var(--gold)', color: 'var(--bg)' }}>
-                {members.length > 0 ? 'Continue to seal' : 'Skip — seal alone'}
+              <button onClick={() => setStep('seal')} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: 'var(--gold)', fontSize: '1.125rem', fontFamily: 'var(--font-display)', fontStyle: 'italic' }}>
+                {members.length > 0 ? 'Continue to seal →' : 'Seal alone →'}
               </button>
             </div>
           </div>
@@ -858,7 +854,7 @@ export default function Home() {
         <div className="min-h-screen flex flex-col items-center justify-center px-8 text-center gap-10">
           <div className="fade-up">
             <p className="text-xs tracking-[0.25em] uppercase mb-4" style={{ color: 'var(--gold-dim)' }}>Seal</p>
-            <h2 className="text-3xl mb-3" style={{ fontFamily: 'var(--font-space)' }}>Hold to seal.</h2>
+            <h2 className="text-3xl mb-3" style={{ fontFamily: 'var(--font-display)', fontStyle: 'italic', fontWeight: 400 }}>Hold to seal.</h2>
             <p className="text-sm leading-relaxed" style={{ color: 'var(--text-2)' }}>
               Hold for 3 seconds.<br />Cannot be undone.
             </p>
@@ -908,7 +904,7 @@ export default function Home() {
               background: 'var(--gold)',
               boxShadow: '0 0 60px rgba(196,66,42,0.3)',
             }}>
-              <span style={{ fontFamily: 'var(--font-space)', fontSize: '64px', color: 'var(--bg)', fontWeight: 700 }}>B</span>
+              <span style={{ fontFamily: 'var(--font-display)', fontSize: '64px', color: 'var(--bg)', fontWeight: 700 }}>B</span>
             </div>
           </div>
         </div>
@@ -919,7 +915,7 @@ export default function Home() {
         <div className="min-h-screen flex flex-col items-center justify-center px-8 text-center gap-8">
           <div className="sealed-text text-xs tracking-[0.35em] uppercase" style={{ color: 'var(--gold)' }}>Sealed</div>
           <div className="fade-up flex flex-col gap-2">
-            <h2 className="text-4xl" style={{ fontFamily: 'var(--font-space)' }}>
+            <h2 className="text-4xl" style={{ fontFamily: 'var(--font-display)', fontStyle: 'italic', fontWeight: 400 }}>
               See you in<br />1 month.
             </h2>
           </div>
@@ -936,17 +932,10 @@ export default function Home() {
           </div>
           <button
             onClick={share}
-            className="fade-up-3 w-full flex items-center justify-center gap-3 py-4 rounded-full transition-all active:scale-95"
-            style={{
-              background: 'var(--gold)',
-              color: 'var(--bg)', fontWeight: 600,
-              boxShadow: '0 4px 20px rgba(196,66,42,0.25)',
-            }}
+            className="fade-up-3"
+            style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: 'var(--gold)', fontSize: '1.125rem', fontFamily: 'var(--font-display)', fontStyle: 'italic' }}
           >
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-              <path d="M8 1v9M4 5l4-4 4 4M2 11v3h12v-3" stroke="var(--bg)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-            Share to Stories
+            Share to Stories →
           </button>
           <button onClick={() => router.push('/capsules')} className="text-xs tracking-[0.12em]" style={{ color: 'var(--text-3)' }}>
             View capsules
