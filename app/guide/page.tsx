@@ -1,68 +1,84 @@
-﻿import Link from 'next/link'
+import Link from 'next/link'
 import Navbar from '../components/Navbar'
 
 const STEPS = [
-  { n: '01', title: 'Meet someone in real life', body: 'At a hostel, a café, on a train. Open beside. Tap to start a capsule.' },
-  { n: '02', title: 'Voice. Photo. Video.', body: 'One take each. No edits. No filters. Raw as the moment. 60 seconds total.' },
+  { n: '01', title: 'Meet someone in real life',      body: 'At a hostel, a café, on a train. Open beside. Tap to start a capsule.' },
+  { n: '02', title: 'Voice. Photo. Video.',            body: 'One take each. No edits. No filters. Raw as the moment. 60 seconds total.' },
   { n: '03', title: 'GPS confirms you were both there', body: 'Everyone you tag gets a location check. Same place, within 15 minutes. No faking it.' },
-  { n: '04', title: 'Hold to seal', body: '3 seconds. Once sealed, it cannot be edited, deleted, or opened early.' },
-  { n: '05', title: '1 month later', body: 'A notification arrives. Your capsule unlocks. You see who made it — and who\'s beside them now.' },
-  { n: '06', title: 'One capsule per month', body: 'That\'s the limit. Make it count.' },
+  { n: '04', title: 'Hold to seal',                   body: '3 seconds. Once sealed, it cannot be edited, deleted, or opened early.' },
+  { n: '05', title: '1 month later',                  body: "A notification arrives. Your capsule unlocks. You see who made it — and who's beside them now." },
+  { n: '06', title: 'One capsule per month',           body: "That's the limit. Make it count." },
 ]
+
+const LABEL: React.CSSProperties = {
+  fontFamily: 'var(--font-space)',
+  fontSize: '10px',
+  letterSpacing: '0.24em',
+  textTransform: 'uppercase' as const,
+  color: 'var(--text-3)',
+}
 
 export default function Guide() {
   return (
-    <main className="min-h-screen flex flex-col pb-24" style={{ background: 'var(--bg)', color: 'var(--text)' }}>
+    <main style={{ minHeight: '100svh', display: 'flex', flexDirection: 'column', background: 'var(--bg)', color: 'var(--text)', paddingBottom: '96px' }}>
 
-      <div className="flex items-center justify-between px-6 pt-14 pb-4">
-        <div className="w-8" />
-        <span className="text-base font-light tracking-[0.4em]" style={{
-          fontFamily: 'var(--font-space)',
-          background: 'linear-gradient(135deg, var(--gold-bright), var(--gold))',
-          WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-        }}>beside</span>
-        <div className="w-8" />
+      <div style={{ padding: '3.5rem 2rem 0' }}>
+        <span style={{ ...LABEL }}>beside</span>
       </div>
 
-      <div className="px-6 pt-6 pb-2">
-        <p className="text-[11px] tracking-[0.22em] uppercase mb-2" style={{ color: 'var(--gold-dim)' }}>Guide</p>
-        <h2 className="text-2xl font-medium" style={{ fontFamily: 'var(--font-space)' }}>How it works.</h2>
+      <div style={{ padding: '3rem 2rem 0' }}>
+        <p style={{ ...LABEL, color: 'var(--gold-dim)', marginBottom: '1rem' }}>Guide</p>
+        <h2 style={{
+          fontFamily: 'var(--font-display)',
+          fontSize: 'clamp(2rem, 8vw, 2.8rem)',
+          fontStyle: 'italic',
+          fontWeight: 400,
+          lineHeight: 1.08,
+        }}>How it works.</h2>
       </div>
 
-      <div className="px-6 pt-6 flex flex-col">
+      <div style={{ padding: '2.5rem 2rem 0', display: 'flex', flexDirection: 'column' }}>
         {STEPS.map((s, i) => (
-          <div key={s.n} className="flex gap-5 pb-7 fade-up" style={{
-            borderBottom: i < STEPS.length - 1 ? '1px solid rgba(30,26,20,0.06)' : 'none',
-            paddingTop: i > 0 ? '24px' : '0',
+          <div key={s.n} className="fade-up" style={{
+            display: 'flex', gap: '20px',
+            paddingTop: i > 0 ? '2rem' : 0,
+            paddingBottom: '2rem',
+            borderBottom: i < STEPS.length - 1 ? '1px solid var(--border)' : 'none',
             animationDelay: `${i * 0.05}s`,
           }}>
-            <span style={{ color: 'var(--text-3)', width: '20px', fontSize: '10px', flexShrink: 0, marginTop: '2px' }}>{s.n}</span>
+            <span style={{ ...LABEL, width: '20px', flexShrink: 0, paddingTop: '2px' }}>{s.n}</span>
             <div>
-              <p className="font-medium mb-1" style={{ fontFamily: 'var(--font-space)' }}>{s.title}</p>
-              <p className="text-sm leading-relaxed" style={{ color: 'var(--text-2)' }}>{s.body}</p>
+              <p style={{ fontFamily: 'var(--font-space)', fontWeight: 500, fontSize: '14px', marginBottom: '6px' }}>{s.title}</p>
+              <p style={{ fontSize: '13px', color: 'var(--text-2)', lineHeight: 1.65, fontFamily: 'var(--font-space)', fontWeight: 300 }}>{s.body}</p>
             </div>
           </div>
         ))}
       </div>
 
-      <div className="mx-5 mt-8 p-5 rounded-2xl" style={{
-        background: 'linear-gradient(180deg, rgba(30,26,20,0.07) 0%, rgba(30,26,20,0.03) 100%)',
-        border: '1px solid rgba(30,26,20,0.1)',
-        boxShadow: '0 4px 20px rgba(0,0,0,0.22), inset 0 1px 0 rgba(30,26,20,0.07)',
-      }}>
-        <p className="text-[10px] tracking-[0.18em] uppercase mb-2" style={{ color: 'var(--gold-dim)' }}>The idea</p>
-        <p className="text-sm leading-relaxed" style={{ fontFamily: 'var(--font-space)' }}>
-          Social media lets you follow anyone. beside lets you follow only the people who were actually beside you.
+      {/* Closing thought */}
+      <div style={{ margin: '2rem 2rem 0', padding: '1.5rem 0', borderTop: '1px solid var(--border)' }}>
+        <p style={{ ...LABEL, marginBottom: '0.75rem' }}>The idea</p>
+        <p style={{
+          fontFamily: 'var(--font-display)',
+          fontSize: 'clamp(1.2rem, 4vw, 1.5rem)',
+          fontStyle: 'italic',
+          fontWeight: 400,
+          lineHeight: 1.4,
+          color: 'var(--text-2)',
+        }}>
+          Social media lets you follow anyone.<br />
+          beside lets you follow only the people<br />
+          who were actually beside you.
         </p>
       </div>
 
-      <div className="px-5 mt-8">
-        <Link href="/" className="block text-center text-sm tracking-[0.06em] py-3.5 rounded-full transition-all active:scale-95" style={{
-          background: 'linear-gradient(135deg, #d4e0ff 0%, #b8c8f0 100%)',
-          color: '#06070d', fontWeight: 600,
-          boxShadow: '0 4px 20px rgba(184,200,240,0.2)',
+      <div style={{ padding: '2.5rem 2rem 0' }}>
+        <Link href="/" style={{
+          color: 'var(--gold)', fontSize: '1.125rem',
+          fontFamily: 'var(--font-display)', fontStyle: 'italic',
+          textDecoration: 'none',
         }}>
-          Take a capsule
+          Take a capsule →
         </Link>
       </div>
 

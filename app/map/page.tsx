@@ -1,10 +1,18 @@
-﻿'use client'
+'use client'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import Navbar from '../components/Navbar'
 import { getCapsules } from '../lib/storage'
 import { useRequireAuth } from '../lib/auth'
 import type { Capsule } from '../lib/types'
+
+const LABEL: React.CSSProperties = {
+  fontFamily: 'var(--font-space)',
+  fontSize: '10px',
+  letterSpacing: '0.24em',
+  textTransform: 'uppercase' as const,
+  color: 'var(--text-3)',
+}
 
 function daysUntil(iso?: string) {
   if (!iso) return 0
@@ -14,54 +22,64 @@ function daysUntil(iso?: string) {
 export default function Map() {
   useRequireAuth()
   const [capsules, setCapsules] = useState<Capsule[]>([])
-  useEffect(() => { setCapsules(getCapsules()) }, [])
+  useEffect(() => setCapsules(getCapsules()), [])
 
   return (
-    <main className="min-h-screen flex flex-col pb-24" style={{ background: 'var(--bg)', color: 'var(--text)' }}>
+    <main style={{ minHeight: '100svh', display: 'flex', flexDirection: 'column', background: 'var(--bg)', color: 'var(--text)', paddingBottom: '96px' }}>
 
-      <div className="flex items-center justify-between px-6 pt-14 pb-4">
-        <div className="w-8" />
-        <span className="text-base font-light tracking-[0.4em]" style={{
-          fontFamily: 'var(--font-space)',
-          background: 'linear-gradient(135deg, var(--gold-bright), var(--gold))',
-          WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-        }}>beside</span>
-        <div className="w-8" />
+      <div style={{ padding: '3.5rem 2rem 0' }}>
+        <span style={{ ...LABEL }}>beside</span>
       </div>
 
-      <div className="px-6 pt-6 pb-4">
-        <p className="text-[11px] tracking-[0.22em] uppercase mb-2" style={{ color: 'var(--gold-dim)' }}>Map</p>
-        <h2 className="text-2xl font-medium" style={{ fontFamily: 'var(--font-space)' }}>Where you've been.</h2>
+      <div style={{ padding: '3rem 2rem 0' }}>
+        <p style={{ ...LABEL, color: 'var(--gold-dim)', marginBottom: '1rem' }}>Map</p>
+        <h2 style={{
+          fontFamily: 'var(--font-display)',
+          fontSize: 'clamp(2rem, 8vw, 2.8rem)',
+          fontStyle: 'italic',
+          fontWeight: 400,
+          lineHeight: 1.08,
+        }}>Where you've been.</h2>
       </div>
 
-      <div className="px-6 pt-4 flex flex-col">
+      <div style={{ padding: '2.5rem 2rem 0', flex: 1 }}>
         {capsules.length === 0 ? (
-          <p className="text-sm" style={{ color: 'var(--text-2)' }}>No locations yet.</p>
+          <p style={{ fontSize: '13px', color: 'var(--text-3)', fontFamily: 'var(--font-space)', fontWeight: 300 }}>
+            No locations yet.
+          </p>
         ) : (
           capsules.map((c, i) => {
             const days   = daysUntil(c.opensAt)
             const isOpen = !!c.sealedAt && days <= 0
             return (
-              <Link key={c.id} href={`/capsules/${c.id}`} className="flex items-start gap-5 mb-6 fade-up" style={{ animationDelay: `${i * 0.06}s` }}>
-                <div className="flex flex-col items-center flex-shrink-0" style={{ width: '10px' }}>
+              <Link key={c.id} href={`/capsules/${c.id}`} className="fade-up" style={{
+                display: 'flex', alignItems: 'flex-start', gap: '20px',
+                paddingBottom: '2.5rem',
+                paddingTop: i > 0 ? '2.5rem' : 0,
+                borderTop: i > 0 ? '1px solid var(--border)' : 'none',
+                textDecoration: 'none', color: 'inherit',
+                animationDelay: `${i * 0.05}s`,
+              }}>
+                {/* dot + line */}
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flexShrink: 0, paddingTop: '4px' }}>
                   <div style={{
-                    width: '10px', height: '10px', borderRadius: '50%',
-                    background: isOpen ? 'var(--gold)' : 'rgba(30,26,20,0.15)',
-                    boxShadow: isOpen ? '0 0 10px rgba(184,200,240,0.5)' : 'none',
-                    marginTop: '3px', flexShrink: 0,
+                    width: '8px', height: '8px', borderRadius: '50%',
+                    background: isOpen ? 'var(--gold)' : 'transparent',
+                    border: `1px solid ${isOpen ? 'var(--gold)' : 'var(--border-2)'}`,
                   }} />
                   {i < capsules.length - 1 && (
-                    <div style={{ width: '1px', flex: 1, background: 'rgba(30,26,20,0.07)', minHeight: '28px', marginTop: '4px' }} />
+                    <div style={{ width: '1px', flex: 1, minHeight: '28px', marginTop: '4px', background: 'var(--border)' }} />
                   )}
                 </div>
-                <div className="flex-1">
-                  <div className="flex items-baseline justify-between mb-0.5">
-                    <p className="text-base font-medium">{c.city}</p>
-                    <span className="text-[10px]" style={{ color: isOpen ? 'var(--gold)' : 'var(--text-3)' }}>
+
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
+                    <p style={{ fontSize: '15px', fontFamily: 'var(--font-space)', fontWeight: 500 }}>{c.city}</p>
+                    <span style={{ ...LABEL, color: isOpen ? 'var(--gold)' : undefined }}>
                       {isOpen ? 'open' : `${days}d`}
                     </span>
                   </div>
-                  <p className="text-xs" style={{ color: 'var(--text-2)' }}>
+                  <p style={{ fontSize: '11px', color: 'var(--text-3)', fontFamily: 'var(--font-space)', marginTop: '4px' }}>
                     {new Date(c.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                     {c.members.length > 0 && ` · ${c.members.length + 1} people`}
                   </p>
@@ -72,13 +90,17 @@ export default function Map() {
         )}
       </div>
 
-      <div className="mx-5 mt-4 p-5 rounded-2xl" style={{
-        background: 'linear-gradient(180deg, rgba(30,26,20,0.07) 0%, rgba(30,26,20,0.03) 100%)',
-        border: '1px solid rgba(30,26,20,0.1)',
-        boxShadow: '0 4px 20px rgba(0,0,0,0.22), inset 0 1px 0 rgba(30,26,20,0.07)',
-      }}>
-        <p className="text-[10px] tracking-[0.18em] uppercase mb-2" style={{ color: 'var(--gold-dim)' }}>The rule</p>
-        <p className="text-sm font-light leading-relaxed" style={{ fontFamily: 'var(--font-space)' }}>
+      {/* The rule */}
+      <div style={{ margin: '1rem 2rem 0', padding: '1.5rem 0', borderTop: '1px solid var(--border)' }}>
+        <p style={{ ...LABEL, marginBottom: '0.75rem' }}>The rule</p>
+        <p style={{
+          fontFamily: 'var(--font-display)',
+          fontSize: 'clamp(1rem, 3.5vw, 1.25rem)',
+          fontStyle: 'italic',
+          fontWeight: 400,
+          lineHeight: 1.5,
+          color: 'var(--text-2)',
+        }}>
           You can only follow people you've physically been beside.
         </p>
       </div>

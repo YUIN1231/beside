@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 import { useParams, useRouter } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 import { getCapsules, saveCapsule } from '../../lib/storage'
@@ -6,6 +6,14 @@ import { useRequireAuth } from '../../lib/auth'
 import { shareOrDownload } from '../../lib/shareImage'
 import { markCapsuleOpened } from '../../lib/supabase'
 import type { Capsule } from '../../lib/types'
+
+const LABEL: React.CSSProperties = {
+  fontFamily: 'var(--font-space)',
+  fontSize: '10px',
+  letterSpacing: '0.24em',
+  textTransform: 'uppercase' as const,
+  color: 'var(--text-3)',
+}
 
 function fmtDate(iso: string) {
   return new Date(iso).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
@@ -27,16 +35,15 @@ export default function CapsuleDetail() {
     if (found?.sealedAt && found.opensAt && new Date(found.opensAt) <= new Date() && !found.opened) {
       saveCapsule({ ...found, opened: true })
       markCapsuleOpened(found.id).catch(() => {})
-      // begin reveal sequence
       const seq: [UnlockStep, number][] = [
         ['dark',    0],
-        ['rising',  600],
-        ['opening', 1800],
-        ['audio',   2800],
-        ['photo',   4200],
-        ['video',   5800],
-        ['people',  7200],
-        ['done',    8400],
+        ['rising',  700],
+        ['opening', 1900],
+        ['audio',   3000],
+        ['photo',   4400],
+        ['video',   6000],
+        ['people',  7500],
+        ['done',    8800],
       ]
       seq.forEach(([s, delay]) => setTimeout(() => setUStep(s), delay))
     } else {
@@ -51,8 +58,8 @@ export default function CapsuleDetail() {
   }, [uStep, cap])
 
   if (!cap) return (
-    <main className="min-h-screen flex items-center justify-center" style={{ background: 'var(--bg)' }}>
-      <p className="text-xs" style={{ color: 'var(--text-3)' }}>Not found.</p>
+    <main style={{ minHeight: '100svh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg)' }}>
+      <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--gold)', animation: 'gold-glow 2s ease infinite' }} />
     </main>
   )
 
@@ -63,56 +70,52 @@ export default function CapsuleDetail() {
   /* ── sealed view ── */
   if (isSealed) {
     return (
-      <main className="min-h-screen flex flex-col" style={{ background: 'var(--bg)', color: 'var(--text)' }}>
-        <div className="flex items-center justify-between px-8 pt-14 pb-8" style={{ borderBottom: '1px solid var(--border)' }}>
-          <button onClick={() => router.back()} className="text-[10px] tracking-[0.2em] uppercase" style={{ color: 'var(--text-2)' }}>back</button>
-          <span className="text-base font-light tracking-[0.4em]" style={{
-            fontFamily: 'var(--font-space)',
-            background: 'linear-gradient(135deg, var(--gold-bright), var(--gold))',
-            WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-          }}>beside</span>
-          <div className="w-8" />
+      <main style={{ minHeight: '100svh', display: 'flex', flexDirection: 'column', background: 'var(--bg)', color: 'var(--text)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '3.5rem 2rem 0' }}>
+          <button onClick={() => router.back()} style={{ background: 'none', border: 'none', cursor: 'pointer', ...LABEL }}>back</button>
+          <span style={{ ...LABEL }}>beside</span>
+          <div style={{ width: '32px' }} />
         </div>
 
-        <div className="flex-1 flex flex-col items-center justify-center px-8 text-center gap-8">
-          <div className="gold-glow rounded-full flex items-center justify-center" style={{
-            width: '100px', height: '100px',
-            border: '1px solid var(--gold)',
-            background: 'var(--surface)',
-          }}>
-            <div style={{ width: '18px', height: '30px', borderRadius: '10px', border: '1px solid var(--gold)', position: 'relative' }}>
-              <div style={{ position: 'absolute', top: '46%', left: 0, right: 0, height: '1px', background: 'var(--gold-dim)' }} />
-            </div>
-          </div>
-          <div className="fade-up flex flex-col gap-3">
-            <p className="text-xs tracking-[0.2em] uppercase" style={{ color: 'var(--gold-dim)' }}>Sealed</p>
-            <p className="text-[4rem] font-light leading-none" style={{ fontFamily: 'var(--font-space)', color: 'var(--gold)' }}>{daysLeft}</p>
-            <p className="text-sm" style={{ color: 'var(--text-2)' }}>days until it opens</p>
-            <p className="text-xs mt-1" style={{ color: 'var(--text-3)' }}>{cap.city} · {fmtDate(cap.createdAt)}</p>
-          </div>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '2rem', textAlign: 'center' }}>
+          <p className="fade-up" style={{ ...LABEL, marginBottom: '1.5rem' }}>sealed</p>
+          <p className="fade-up" style={{
+            fontFamily: 'var(--font-display)',
+            fontSize: 'clamp(7rem, 28vw, 11rem)',
+            fontStyle: 'italic',
+            fontWeight: 400,
+            lineHeight: 0.9,
+            letterSpacing: '-0.02em',
+          }}>{daysLeft}</p>
+          <p className="fade-up-2" style={{ ...LABEL, marginTop: '1.25rem' }}>days remaining</p>
+          <p className="fade-up-3" style={{ fontSize: '12px', color: 'var(--text-3)', fontFamily: 'var(--font-space)', marginTop: '1.5rem' }}>
+            {cap.city} · {fmtDate(cap.createdAt)}
+          </p>
           {cap.members.length > 0 && (
-            <div className="flex items-center gap-2">
+            <div style={{ display: 'flex', gap: '8px', marginTop: '2rem', justifyContent: 'center' }}>
               {cap.members.slice(0, 5).map((m, i) => (
-                <div key={i} className="w-8 h-8 rounded-full flex items-center justify-center text-xs" style={{
-                  background: 'var(--surface-2)', border: '1px solid var(--border-2)', color: 'var(--text-2)',
+                <div key={i} style={{
+                  width: '30px', height: '30px', borderRadius: '50%',
+                  background: 'var(--surface)',
+                  border: '1px solid var(--border-2)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: '10px', color: 'var(--text-2)',
+                  fontFamily: 'var(--font-space)',
                 }}>{m.initial}</div>
               ))}
-              <p className="text-xs ml-1" style={{ color: 'var(--text-3)' }}>+you</p>
             </div>
           )}
           <button
             onClick={() => shareOrDownload(cap)}
-            className="flex items-center gap-2 px-6 py-3 rounded-full text-sm tracking-[0.06em] transition-all active:scale-95"
             style={{
-              background: 'linear-gradient(135deg, #d4e0ff 0%, #b8c8f0 100%)',
-              color: '#06070d', fontWeight: 600,
-              boxShadow: '0 4px 20px rgba(184,200,240,0.22)',
+              background: 'none', border: 'none', cursor: 'pointer',
+              marginTop: '3rem',
+              display: 'flex', alignItems: 'center', gap: '8px',
+              color: 'var(--gold)', fontSize: '1.125rem',
+              fontFamily: 'var(--font-display)', fontStyle: 'italic',
             }}
           >
-            <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
-              <path d="M8 1v9M4 5l4-4 4 4M2 11v3h12v-3" stroke="#06070d" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-            Share to Stories
+            Share to Stories →
           </button>
         </div>
       </main>
@@ -122,76 +125,96 @@ export default function CapsuleDetail() {
   /* ── unlock sequence ── */
   if (isOpen && uStep !== 'done') {
     return (
-      <main className="min-h-screen flex flex-col items-center justify-center" style={{
-        background: uStep === 'dark' ? '#000' : 'var(--bg)',
-        transition: 'background 1.2s ease',
+      <main style={{
+        minHeight: '100svh',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: uStep === 'dark' ? '#0E0B08' : 'var(--bg)',
+        transition: 'background 1.4s ease',
       }}>
         {uStep === 'rising' && (
-          <div className="unlock-rise text-center flex flex-col gap-3">
-            <p className="text-xs tracking-[0.3em] uppercase" style={{ color: 'var(--gold-dim)' }}>{cap.city}</p>
-            <p className="text-lg font-light" style={{ fontFamily: 'var(--font-space)', color: 'var(--text)' }}>{fmtDate(cap.createdAt)}</p>
+          <div className="unlock-rise" style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <p style={{ ...LABEL, color: 'var(--gold-dim)' }}>{cap.city}</p>
+            <p style={{ fontFamily: 'var(--font-space)', fontSize: '16px', fontWeight: 300, color: 'var(--text)' }}>
+              {fmtDate(cap.createdAt)}
+            </p>
           </div>
         )}
+
         {uStep === 'opening' && (
-          <div className="unlock-rise flex flex-col items-center gap-6">
-            <p className="text-xs tracking-[0.3em] uppercase" style={{ color: 'var(--gold-dim)' }}>{cap.city}</p>
-            {/* opening pill animation */}
-            <div className="flex flex-col items-center" style={{ gap: '3px' }}>
+          <div className="unlock-rise" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '24px' }}>
+            <p style={{ ...LABEL, color: 'var(--gold-dim)' }}>{cap.city}</p>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px' }}>
               <div style={{
-                width: '70px', height: '40px', borderRadius: '40px 40px 0 0',
+                width: '64px', height: '38px', borderRadius: '40px 40px 0 0',
                 border: '1px solid var(--gold)',
-                background: 'linear-gradient(180deg, rgba(184,200,240,0.1) 0%, transparent 100%)',
-                animation: 'seal-top 0.8s cubic-bezier(0.4,0,0.2,1) forwards',
+                animation: 'seal-top 0.9s cubic-bezier(0.4,0,0.2,1) forwards',
               }} />
               <div style={{
-                width: '70px', height: '40px', borderRadius: '0 0 40px 40px',
+                width: '64px', height: '38px', borderRadius: '0 0 40px 40px',
                 border: '1px solid var(--gold)',
-                background: 'linear-gradient(0deg, rgba(184,200,240,0.1) 0%, transparent 100%)',
-                animation: 'seal-bottom 0.8s cubic-bezier(0.4,0,0.2,1) forwards',
+                animation: 'seal-bottom 0.9s cubic-bezier(0.4,0,0.2,1) forwards',
               }} />
             </div>
-            <p className="text-sm font-light" style={{ fontFamily: 'var(--font-space)', color: 'var(--text)', opacity: 0.6 }}>Opening…</p>
+            <p style={{ fontFamily: 'var(--font-space)', fontSize: '12px', color: 'var(--text-2)', fontWeight: 300 }}>Opening…</p>
           </div>
         )}
-        {(uStep === 'audio') && (
-          <div className="unlock-rise text-center flex flex-col gap-4">
-            <p className="text-xs tracking-[0.3em] uppercase" style={{ color: 'var(--gold-dim)' }}>Voice</p>
-            <div className="w-20 h-20 rounded-full flex items-center justify-center mx-auto" style={{ border: '1px solid var(--gold)', background: 'rgba(184,200,240,0.08)' }}>
-              <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: 'var(--gold)', animation: 'gold-glow 2s ease infinite' }} />
+
+        {uStep === 'audio' && (
+          <div className="unlock-rise" style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '20px', alignItems: 'center' }}>
+            <p style={{ ...LABEL, color: 'var(--gold-dim)' }}>Voice</p>
+            <div style={{ width: '72px', height: '72px', borderRadius: '50%', border: '1px solid var(--gold)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div className="gold-glow" style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--gold)' }} />
             </div>
             {cap.audioUrl && <audio ref={audioRef} src={cap.audioUrl} />}
           </div>
         )}
+
         {uStep === 'photo' && (
-          <div className="unlock-rise flex flex-col items-center gap-4">
-            <p className="text-xs tracking-[0.3em] uppercase" style={{ color: 'var(--gold-dim)' }}>Photo</p>
+          <div className="unlock-rise" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', padding: '2rem', width: '100%' }}>
+            <p style={{ ...LABEL, color: 'var(--gold-dim)' }}>Photo</p>
             {cap.photoUrl
-              ? <img src={cap.photoUrl} className="developing rounded-2xl" style={{ width: '280px', height: '280px', objectFit: 'cover' }} alt="" />
-              : <div className="rounded-2xl" style={{ width: '280px', height: '280px', background: 'var(--surface)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <p className="text-xs" style={{ color: 'var(--text-3)' }}>No photo</p>
+              ? <img src={cap.photoUrl} className="developing" style={{ width: '100%', maxWidth: '320px', aspectRatio: '1', objectFit: 'cover', borderRadius: '2px' }} alt="" />
+              : <div style={{ width: '100%', maxWidth: '320px', aspectRatio: '1', background: 'var(--surface)', borderRadius: '2px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <p style={{ ...LABEL }}>No photo</p>
                 </div>
             }
           </div>
         )}
+
         {uStep === 'video' && (
-          <div className="unlock-rise flex flex-col items-center gap-4">
-            <p className="text-xs tracking-[0.3em] uppercase" style={{ color: 'var(--gold-dim)' }}>Video</p>
+          <div className="unlock-rise" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', padding: '2rem', width: '100%' }}>
+            <p style={{ ...LABEL, color: 'var(--gold-dim)' }}>Video</p>
             {cap.videoUrl
-              ? <video src={cap.videoUrl} autoPlay playsInline className="rounded-2xl" style={{ width: '280px', height: '280px', objectFit: 'cover' }} />
-              : <div className="rounded-2xl" style={{ width: '280px', height: '280px', background: 'var(--surface)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <p className="text-xs" style={{ color: 'var(--text-3)' }}>No video</p>
+              ? <video src={cap.videoUrl} autoPlay playsInline style={{ width: '100%', maxWidth: '320px', aspectRatio: '1', objectFit: 'cover', borderRadius: '2px' }} />
+              : <div style={{ width: '100%', maxWidth: '320px', aspectRatio: '1', background: 'var(--surface)', borderRadius: '2px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <p style={{ ...LABEL }}>No video</p>
                 </div>
             }
           </div>
         )}
+
         {uStep === 'people' && cap.members.length > 0 && (
-          <div className="unlock-rise flex flex-col items-center gap-6 px-8 text-center">
-            <p className="text-xs tracking-[0.3em] uppercase" style={{ color: 'var(--gold-dim)' }}>Who was there</p>
-            <div className="flex flex-col gap-3 w-full max-w-xs">
+          <div className="unlock-rise" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px', padding: '2rem', width: '100%', textAlign: 'center' }}>
+            <p style={{ ...LABEL, color: 'var(--gold-dim)' }}>Who was there</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0', width: '100%', maxWidth: '280px' }}>
               {cap.members.map((m, i) => (
-                <div key={i} className="flex items-center gap-3 px-4 py-3 rounded-xl" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
-                  <div className="w-9 h-9 rounded-full flex items-center justify-center text-xs" style={{ background: 'var(--border-2)', color: 'var(--gold)' }}>{m.initial}</div>
-                  <p className="text-sm">{m.name}</p>
+                <div key={i} style={{
+                  display: 'flex', alignItems: 'center', gap: '12px',
+                  padding: '14px 0',
+                  borderBottom: i < cap.members.length - 1 ? '1px solid var(--border)' : 'none',
+                }}>
+                  <div style={{
+                    width: '32px', height: '32px', borderRadius: '50%',
+                    background: 'var(--surface)',
+                    border: '1px solid var(--border-2)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: '11px', color: 'var(--text-2)',
+                    fontFamily: 'var(--font-space)',
+                  }}>{m.initial}</div>
+                  <p style={{ fontSize: '14px', fontFamily: 'var(--font-space)' }}>{m.name}</p>
                 </div>
               ))}
             </div>
@@ -203,72 +226,95 @@ export default function CapsuleDetail() {
 
   /* ── done / already opened ── */
   return (
-    <main className="min-h-screen flex flex-col pb-8" style={{ background: 'var(--bg)', color: 'var(--text)' }}>
-      <div className="flex items-center justify-between px-8 pt-14 pb-8" style={{ borderBottom: '1px solid var(--border)' }}>
-        <button onClick={() => router.back()} className="text-[10px] tracking-[0.2em] uppercase" style={{ color: 'var(--text-2)' }}>back</button>
-        <span className="text-base font-light tracking-[0.4em]" style={{
-          fontFamily: 'var(--font-space)',
-          background: 'linear-gradient(135deg, var(--gold-bright), var(--gold))',
-          WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-        }}>beside</span>
-        <div className="w-8" />
+    <main style={{ minHeight: '100svh', display: 'flex', flexDirection: 'column', background: 'var(--bg)', color: 'var(--text)', paddingBottom: '2rem' }}>
+      {/* header */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '3.5rem 2rem 0' }}>
+        <button onClick={() => router.back()} style={{ background: 'none', border: 'none', cursor: 'pointer', ...LABEL }}>back</button>
+        <span style={{ ...LABEL }}>beside</span>
+        <div style={{ width: '32px' }} />
       </div>
 
-      <div className="px-8 pt-8 pb-6">
-        <p className="text-xs tracking-[0.2em] uppercase mb-2" style={{ color: 'var(--gold-dim)' }}>{cap.city}</p>
-        <h2 className="text-2xl font-light" style={{ fontFamily: 'var(--font-space)' }}>{fmtDate(cap.createdAt)}</h2>
+      {/* meta */}
+      <div style={{ padding: '3rem 2rem 0' }}>
+        <p style={{ ...LABEL, color: 'var(--gold-dim)', marginBottom: '8px' }}>{cap.city}</p>
+        <h2 style={{
+          fontFamily: 'var(--font-display)',
+          fontSize: 'clamp(1.8rem, 7vw, 2.4rem)',
+          fontStyle: 'italic',
+          fontWeight: 400,
+          lineHeight: 1.1,
+          marginBottom: '1rem',
+        }}>{fmtDate(cap.createdAt)}</h2>
         {cap.members.length > 0 && (
-          <div className="flex items-center gap-2 mt-3">
+          <div style={{ display: 'flex', gap: '6px' }}>
             {cap.members.slice(0, 5).map((m, i) => (
-              <div key={i} className="w-7 h-7 rounded-full flex items-center justify-center text-[10px]" style={{ background: 'var(--surface-2)', border: '1px solid var(--border-2)', color: 'var(--gold)' }}>{m.initial}</div>
+              <div key={i} style={{
+                width: '28px', height: '28px', borderRadius: '50%',
+                background: 'var(--surface)',
+                border: '1px solid var(--border-2)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: '10px', color: 'var(--text-3)',
+                fontFamily: 'var(--font-space)',
+              }}>{m.initial}</div>
             ))}
           </div>
         )}
       </div>
 
-      <div className="px-8 pb-6 flex justify-end">
+      {/* share */}
+      <div style={{ padding: '1.5rem 2rem 0', display: 'flex', justifyContent: 'flex-end' }}>
         <button
           onClick={() => shareOrDownload(cap)}
-          className="flex items-center gap-2 px-5 py-2.5 rounded-full text-xs tracking-[0.06em] transition-all active:scale-95"
           style={{
-            background: 'linear-gradient(135deg, #d4e0ff 0%, #b8c8f0 100%)',
-            color: '#06070d', fontWeight: 600,
+            background: 'none', border: 'none', cursor: 'pointer',
+            display: 'flex', alignItems: 'center', gap: '6px',
+            color: 'var(--gold)', fontSize: '13px',
+            fontFamily: 'var(--font-display)', fontStyle: 'italic',
           }}
         >
-          <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
-            <path d="M8 1v9M4 5l4-4 4 4M2 11v3h12v-3" stroke="#06070d" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-          Share to Stories
+          Share to Stories →
         </button>
       </div>
 
-      <div className="px-8 flex flex-col gap-4">
+      {/* content */}
+      <div style={{ padding: '2rem', display: 'flex', flexDirection: 'column', gap: '1px' }}>
         {cap.audioUrl && (
-          <div className="p-4 rounded-2xl" style={{ background: 'linear-gradient(180deg, var(--surface-2) 0%, var(--surface) 100%)', border: '1px solid var(--border)', boxShadow: '0 4px 20px rgba(0,0,0,0.25), inset 0 1px 0 rgba(30,26,20,0.07)' }}>
-            <p className="text-[10px] tracking-[0.2em] uppercase mb-3" style={{ color: 'var(--text-2)' }}>Voice</p>
+          <div style={{ paddingTop: '1.5rem', paddingBottom: '1.5rem', borderTop: '1px solid var(--border)' }}>
+            <p style={{ ...LABEL, marginBottom: '14px' }}>Voice</p>
             <audio ref={audioRef} src={cap.audioUrl} controls style={{ width: '100%', accentColor: 'var(--gold)' }} />
           </div>
         )}
         {cap.photoUrl && (
-          <div className="p-4 rounded-2xl" style={{ background: 'linear-gradient(180deg, var(--surface-2) 0%, var(--surface) 100%)', border: '1px solid var(--border)', boxShadow: '0 4px 20px rgba(0,0,0,0.25), inset 0 1px 0 rgba(30,26,20,0.07)' }}>
-            <p className="text-[10px] tracking-[0.2em] uppercase mb-3" style={{ color: 'var(--text-2)' }}>Photo</p>
-            <img src={cap.photoUrl} className="w-full rounded-xl" style={{ aspectRatio: '1', objectFit: 'cover' }} alt="" />
+          <div style={{ paddingTop: '1.5rem', paddingBottom: '1.5rem', borderTop: '1px solid var(--border)' }}>
+            <p style={{ ...LABEL, marginBottom: '14px' }}>Photo</p>
+            <img src={cap.photoUrl} style={{ width: '100%', borderRadius: '2px', aspectRatio: '1', objectFit: 'cover' }} alt="" />
           </div>
         )}
         {cap.videoUrl && (
-          <div className="p-4 rounded-2xl" style={{ background: 'linear-gradient(180deg, var(--surface-2) 0%, var(--surface) 100%)', border: '1px solid var(--border)', boxShadow: '0 4px 20px rgba(0,0,0,0.25), inset 0 1px 0 rgba(30,26,20,0.07)' }}>
-            <p className="text-[10px] tracking-[0.2em] uppercase mb-3" style={{ color: 'var(--text-2)' }}>Video</p>
-            <video src={cap.videoUrl} controls className="w-full rounded-xl" style={{ aspectRatio: '1', objectFit: 'cover' }} />
+          <div style={{ paddingTop: '1.5rem', paddingBottom: '1.5rem', borderTop: '1px solid var(--border)' }}>
+            <p style={{ ...LABEL, marginBottom: '14px' }}>Video</p>
+            <video src={cap.videoUrl} controls style={{ width: '100%', borderRadius: '2px', aspectRatio: '1', objectFit: 'cover' }} />
           </div>
         )}
         {cap.members.length > 0 && (
-          <div className="p-4 rounded-2xl" style={{ background: 'linear-gradient(180deg, var(--surface-2) 0%, var(--surface) 100%)', border: '1px solid var(--border)', boxShadow: '0 4px 20px rgba(0,0,0,0.25), inset 0 1px 0 rgba(30,26,20,0.07)' }}>
-            <p className="text-[10px] tracking-[0.2em] uppercase mb-3" style={{ color: 'var(--text-2)' }}>Who was there</p>
-            <div className="flex flex-col gap-2">
+          <div style={{ paddingTop: '1.5rem', borderTop: '1px solid var(--border)' }}>
+            <p style={{ ...LABEL, marginBottom: '14px' }}>Who was there</p>
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
               {cap.members.map((m, i) => (
-                <div key={i} className="flex items-center gap-3 py-2" style={{ borderBottom: i < cap.members.length - 1 ? '1px solid var(--border)' : 'none' }}>
-                  <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs" style={{ background: 'var(--border-2)', color: 'var(--gold)' }}>{m.initial}</div>
-                  <p className="text-sm">{m.name}</p>
+                <div key={i} style={{
+                  display: 'flex', alignItems: 'center', gap: '12px',
+                  padding: '12px 0',
+                  borderBottom: i < cap.members.length - 1 ? '1px solid var(--border)' : 'none',
+                }}>
+                  <div style={{
+                    width: '32px', height: '32px', borderRadius: '50%',
+                    background: 'var(--surface)',
+                    border: '1px solid var(--border-2)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: '11px', color: 'var(--text-2)',
+                    fontFamily: 'var(--font-space)',
+                  }}>{m.initial}</div>
+                  <p style={{ fontSize: '14px', fontFamily: 'var(--font-space)' }}>{m.name}</p>
                 </div>
               ))}
             </div>

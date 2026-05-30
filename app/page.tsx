@@ -1,10 +1,10 @@
-﻿'use client'
+'use client'
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import Navbar from './components/Navbar'
 import Waveform from './components/Waveform'
 import {
-  isAuthenticated, getActiveSealedCapsule, getReadyCapsule,
+  isAuthenticated, isOnboarded, getActiveSealedCapsule, getReadyCapsule,
   hasCapsuledThisMonth, saveCapsule, getUser,
 } from './lib/storage'
 import { shareOrDownload } from './lib/shareImage'
@@ -14,50 +14,52 @@ import {
 } from './lib/supabase'
 import type { Capsule, Member, GeoLocation } from './lib/types'
 
-type AppState  = 'loading' | 'create' | 'sealed' | 'ready'
-type Step      = 'landing' | 'tutorial' | 'voice' | 'photo' | 'video' | 'tag' | 'seal' | 'sealed-anim' | 'done'
+type AppState = 'loading' | 'create' | 'sealed' | 'ready'
+type Step     = 'landing' | 'tutorial' | 'voice' | 'photo' | 'video' | 'tag' | 'seal' | 'sealed-anim' | 'done'
 
-/* ─────────────────────────────── Component ─────────────────────────── */
+const LABEL: React.CSSProperties = {
+  fontFamily: 'var(--font-space)',
+  fontSize: '10px',
+  letterSpacing: '0.26em',
+  textTransform: 'uppercase',
+  color: 'var(--text-3)',
+}
+
 export default function Home() {
   const router = useRouter()
 
-  /* app-level */
   const [appState,    setAppState]    = useState<AppState>('loading')
   const [step,        setStep]        = useState<Step>('landing')
   const [sealedCap,   setSealedCap]   = useState<Capsule | null>(null)
   const [geo,         setGeo]         = useState<GeoLocation | null>(null)
   const [monthlyUsed, setMonthlyUsed] = useState(false)
 
-  /* voice */
-  const [audioStream,  setAudioStream]  = useState<MediaStream | null>(null)
-  const [recording,    setRecording]    = useState(false)
-  const [audioBlob,    setAudioBlob]    = useState<Blob | null>(null)
-  const [waveSnap,     setWaveSnap]     = useState<number[]>([])
+  const [audioStream,   setAudioStream]   = useState<MediaStream | null>(null)
+  const [recording,     setRecording]     = useState(false)
+  const [audioBlob,     setAudioBlob]     = useState<Blob | null>(null)
+  const [waveSnap,      setWaveSnap]      = useState<number[]>([])
   const [audioProgress, setAudioProgress] = useState(0)
   const mediaRecRef   = useRef<MediaRecorder | null>(null)
   const audioChunks   = useRef<Blob[]>([])
   const audioInterval = useRef<ReturnType<typeof setInterval> | null>(null)
 
-  /* photo */
-  const [camStream,    setCamStream]    = useState<MediaStream | null>(null)
-  const [photoUrl,     setPhotoUrl]     = useState<string | null>(null)
-  const [developing,   setDeveloping]   = useState(false)
-  const [camFacing,    setCamFacing]    = useState<'environment'|'user'>('environment')
-  const videoRef     = useRef<HTMLVideoElement | null>(null)
-  const canvasRef    = useRef<HTMLCanvasElement | null>(null)
+  const [camStream,  setCamStream]  = useState<MediaStream | null>(null)
+  const [photoUrl,   setPhotoUrl]   = useState<string | null>(null)
+  const [developing, setDeveloping] = useState(false)
+  const [camFacing,  setCamFacing]  = useState<'environment'|'user'>('environment')
+  const videoRef   = useRef<HTMLVideoElement | null>(null)
+  const canvasRef  = useRef<HTMLCanvasElement | null>(null)
 
-  /* video */
   const [vidStream,    setVidStream]    = useState<MediaStream | null>(null)
   const [vidRecording, setVidRecording] = useState(false)
   const [videoBlob,    setVideoBlob]    = useState<Blob | null>(null)
   const [vidProgress,  setVidProgress]  = useState(0)
   const [vidFacing,    setVidFacing]    = useState<'environment'|'user'>('environment')
-  const vidRef       = useRef<HTMLVideoElement | null>(null)
-  const vidRecRef    = useRef<MediaRecorder | null>(null)
-  const vidChunks    = useRef<Blob[]>([])
-  const vidInterval  = useRef<ReturnType<typeof setInterval> | null>(null)
+  const vidRef    = useRef<HTMLVideoElement | null>(null)
+  const vidRecRef = useRef<MediaRecorder | null>(null)
+  const vidChunks = useRef<Blob[]>([])
+  const vidInterval = useRef<ReturnType<typeof setInterval> | null>(null)
 
-  /* tag + join session */
   const [members,       setMembers]       = useState<Member[]>([])
   const [tagInput,      setTagInput]      = useState('')
   const [capsuleId,     setCapsuleId]     = useState(() => Math.random().toString(36).slice(2))
@@ -67,7 +69,6 @@ export default function Home() {
   const qrCanvasRef = useRef<HTMLCanvasElement | null>(null)
   const joinSubRef  = useRef<ReturnType<typeof subscribeToSession> | null>(null)
 
-  /* seal */
   const [holdPct,    setHoldPct]    = useState(0)
   const holdRaf      = useRef<number>(0)
   const holdStart    = useRef<number>(0)
@@ -75,6 +76,7 @@ export default function Home() {
 
   /* ── init ── */
   useEffect(() => {
+    if (!isOnboarded()) { router.replace('/onboarding'); return }
     if (!isAuthenticated()) { router.replace('/auth'); return }
     setMonthlyUsed(hasCapsuledThisMonth())
     const ready  = getReadyCapsule()
@@ -82,14 +84,12 @@ export default function Home() {
     if (ready)  { setSealedCap(ready);  setAppState('ready');  return }
     if (sealed) { setSealedCap(sealed); setAppState('sealed'); return }
     setAppState('create')
-
     navigator.geolocation?.getCurrentPosition(async pos => {
       const city = await reverseGeocode(pos.coords.latitude, pos.coords.longitude)
       setGeo({ city, latitude: pos.coords.latitude, longitude: pos.coords.longitude })
     })
   }, [router])
 
-  /* ── camera setup ── */
   useEffect(() => {
     if (camStream && videoRef.current) {
       videoRef.current.srcObject = camStream
@@ -109,28 +109,22 @@ export default function Home() {
     if (step !== 'tag') return
     const user = getUser()
     if (!user) return
-
     const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://beside-gules.vercel.app'
-
     createJoinSession(capsuleId, user.email, user.name, geo?.city ?? '').then(async sid => {
       if (!sid) return
       setJoinSessionId(sid)
       const url = `${baseUrl}/join/${sid}`
       setJoinUrl(url)
-
-      // Draw QR
       if (typeof window !== 'undefined') {
         const QRCode = (await import('qrcode')).default
         if (qrCanvasRef.current) {
           QRCode.toCanvas(qrCanvasRef.current, url, {
-            width: 200,
-            color: { dark: '#1E1A14', light: '#F5F0E8' },
+            width: 180,
+            color: { dark: '#1A1410', light: '#E8DDD0' },
             margin: 2,
           })
         }
       }
-
-      // Load existing entries
       const existing = await getJoinEntries(sid)
       existing.forEach(e => {
         setMembers(prev => {
@@ -138,8 +132,6 @@ export default function Home() {
           return [...prev, { name: e.name, email: e.email, initial: e.name[0]?.toUpperCase() ?? '?' }]
         })
       })
-
-      // Subscribe for new entries
       joinSubRef.current = subscribeToSession(sid, entry => {
         setMembers(prev => {
           if (prev.some(m => m.email === entry.email)) return prev
@@ -147,10 +139,7 @@ export default function Home() {
         })
       })
     })
-
-    return () => {
-      joinSubRef.current?.unsubscribe()
-    }
+    return () => { joinSubRef.current?.unsubscribe() }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step])
 
@@ -186,7 +175,7 @@ export default function Home() {
     setRecording(false)
     if (audioInterval.current) clearInterval(audioInterval.current)
   }
-  const handleWaveSnap = useCallback((d: number[]) => { setWaveSnap(d) }, [])
+  const handleWaveSnap = useCallback((d: number[]) => setWaveSnap(d), [])
 
   /* ── photo ── */
   const openCamera = async (facing: 'environment'|'user' = camFacing) => {
@@ -207,7 +196,7 @@ export default function Home() {
     setCamStream(null)
     setDeveloping(true)
     setPhotoUrl(url)
-    setTimeout(() => setDeveloping(false), 1800)
+    setTimeout(() => setDeveloping(false), 2000)
   }
 
   /* ── video ── */
@@ -236,7 +225,7 @@ export default function Home() {
     }, 100)
     setTimeout(() => { if (mr.state === 'recording') mr.stop() }, 10000)
   }
-  const stopVideo = () => { vidRecRef.current?.stop() }
+  const stopVideo = () => vidRecRef.current?.stop()
 
   /* ── seal long-press ── */
   const startHold = () => {
@@ -244,8 +233,8 @@ export default function Home() {
     const tick = () => {
       const pct = Math.min((performance.now() - holdStart.current) / 3000, 1)
       setHoldPct(pct)
-      if (pct < 1) { holdRaf.current = requestAnimationFrame(tick) }
-      else          { doSeal() }
+      if (pct < 1) holdRaf.current = requestAnimationFrame(tick)
+      else doSeal()
     }
     holdRaf.current = requestAnimationFrame(tick)
   }
@@ -260,8 +249,6 @@ export default function Home() {
     const now   = new Date()
     const opens = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000)
     const user  = getUser()
-
-    // Save locally first with blob URLs for instant playback
     const cap: Capsule = {
       id:        capsuleId,
       location:  geo?.city ?? 'Unknown',
@@ -279,31 +266,25 @@ export default function Home() {
     saveCapsule(cap)
     setSealedData(cap)
     setStep('sealed-anim')
-
-    // Upload to Supabase in background
     if (user) {
       saveCapsuleRemote(cap, user.email, {
-        audio:       audioBlob  ?? undefined,
-        photoDataUrl: photoUrl  ?? undefined,
-        video:       videoBlob  ?? undefined,
+        audio: audioBlob ?? undefined,
+        photoDataUrl: photoUrl ?? undefined,
+        video: videoBlob ?? undefined,
       }).then(updatedCap => {
-        // Update local storage with remote URLs
         saveCapsule(updatedCap)
         setSealedData(updatedCap)
       }).catch(err => console.error('Supabase save error', err))
     }
-
-    setTimeout(() => setStep('done'), 2400)
+    setTimeout(() => setStep('done'), 2600)
     setSealing(false)
   }
 
-  /* ── share card ── */
   const share = async () => {
     if (!sealedData) return
     await shareOrDownload(sealedData)
   }
 
-  /* ── days until ── */
   const daysUntil = (iso?: string) => {
     if (!iso) return 0
     return Math.ceil((new Date(iso).getTime() - Date.now()) / 86400000)
@@ -312,8 +293,8 @@ export default function Home() {
   /* ── LOADING ── */
   if (appState === 'loading') {
     return (
-      <main className="min-h-screen flex items-center justify-center" style={{ background: 'var(--bg)' }}>
-        <div className="w-2 h-2 rounded-full" style={{ background: 'var(--gold)', animation: 'gold-glow 2s ease infinite' }} />
+      <main style={{ minHeight: '100svh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg)' }}>
+        <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--gold)', animation: 'gold-glow 2s ease infinite' }} />
       </main>
     )
   }
@@ -322,26 +303,32 @@ export default function Home() {
   if (appState === 'sealed' && sealedCap) {
     const days = daysUntil(sealedCap.opensAt)
     return (
-      <main className="min-h-screen flex flex-col pb-24" style={{ background: 'var(--bg)', color: 'var(--text)' }}>
-        <Header />
-        <div className="flex-1 flex flex-col items-center justify-center px-8 text-center gap-10">
-          <div className="story-ring gold-glow" style={{ width: '110px', height: '110px' }}>
-            <div className="story-ring-inner" style={{ width: '104px', height: '104px' }}>
-              <div style={{
-                width: '98px', height: '98px', borderRadius: '50%',
-                background: 'var(--surface)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-              }}>
-                <Pill gold />
-              </div>
-            </div>
-          </div>
-          <div className="fade-up flex flex-col gap-3">
-            <p className="text-[11px] tracking-[0.22em] uppercase" style={{ color: 'var(--gold-dim)' }}>Sealed</p>
-            <p style={{ fontFamily: 'var(--font-display)', fontSize: '5rem', lineHeight: 1, color: 'var(--gold)', fontStyle: 'italic' }}>{days}</p>
-            <p className="text-sm" style={{ color: 'var(--text-2)' }}>days until it opens</p>
-            <p className="text-xs mt-1" style={{ color: 'var(--text-3)' }}>{sealedCap.city}</p>
-          </div>
+      <main style={{ minHeight: '100svh', display: 'flex', flexDirection: 'column', background: 'var(--bg)', color: 'var(--text)', paddingBottom: '96px' }}>
+        <div style={{ padding: '3.5rem 2rem 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span style={{ ...LABEL }}>beside</span>
+          <span style={{ ...LABEL }}>{sealedCap.city}</span>
+        </div>
+
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '0 2rem', textAlign: 'center', gap: '0' }}>
+          <p className="fade-up" style={{ ...LABEL, marginBottom: '1.5rem' }}>sealed</p>
+          <p className="fade-up" style={{
+            fontFamily: 'var(--font-display)',
+            fontSize: 'clamp(7rem, 28vw, 11rem)',
+            fontStyle: 'italic',
+            fontWeight: 400,
+            lineHeight: 0.9,
+            color: 'var(--text)',
+            letterSpacing: '-0.02em',
+          }}>{days}</p>
+          <p className="fade-up-2" style={{ ...LABEL, marginTop: '1.25rem' }}>days remaining</p>
+          <p className="fade-up-3" style={{
+            marginTop: '2.5rem',
+            fontSize: '12px',
+            color: 'var(--text-3)',
+            fontFamily: 'var(--font-space)',
+          }}>
+            {new Date(sealedCap.sealedAt!).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+          </p>
         </div>
         <Navbar active="home" />
       </main>
@@ -351,29 +338,27 @@ export default function Home() {
   /* ── READY TO OPEN ── */
   if (appState === 'ready' && sealedCap) {
     return (
-      <main className="min-h-screen flex flex-col pb-24" style={{ background: 'var(--bg)', color: 'var(--text)' }}>
-        <Header />
-        <div className="flex-1 flex flex-col items-center justify-center px-8 text-center gap-10">
-          <div className="story-ring gold-glow" style={{ width: '110px', height: '110px' }}>
-            <div className="story-ring-inner" style={{ width: '104px', height: '104px' }}>
-              <div style={{
-                width: '98px', height: '98px', borderRadius: '50%',
-                background: 'var(--surface)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-              }}>
-                <Pill gold />
-              </div>
-            </div>
-          </div>
-          <div className="fade-up flex flex-col gap-3">
-            <p className="text-[11px] tracking-[0.22em] uppercase" style={{ color: 'var(--gold)' }}>Ready</p>
-            <h2 className="text-3xl" style={{ fontFamily: 'var(--font-display)', fontStyle: 'italic', fontWeight: 400 }}>Your capsule is open.</h2>
-            <p className="text-sm" style={{ color: 'var(--text-2)' }}>{sealedCap.city}</p>
-          </div>
-          <button
+      <main style={{ minHeight: '100svh', display: 'flex', flexDirection: 'column', background: 'var(--bg)', color: 'var(--text)', paddingBottom: '96px' }}>
+        <div style={{ padding: '3.5rem 2rem 0' }}>
+          <span style={{ ...LABEL }}>beside</span>
+        </div>
+
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '0 2rem', textAlign: 'center', gap: '0' }}>
+          <p className="fade-up" style={{ ...LABEL, color: 'var(--gold)', marginBottom: '1.5rem' }}>ready</p>
+          <h2 className="fade-up" style={{
+            fontFamily: 'var(--font-display)',
+            fontSize: 'clamp(2.4rem, 10vw, 3.6rem)',
+            fontStyle: 'italic',
+            fontWeight: 400,
+            lineHeight: 1.1,
+            letterSpacing: '-0.01em',
+          }}>Your capsule<br />has opened.</h2>
+          <p className="fade-up-2" style={{ marginTop: '1rem', fontSize: '13px', color: 'var(--text-2)', fontFamily: 'var(--font-space)' }}>
+            {sealedCap.city}
+          </p>
+          <button className="fade-up-3"
             onClick={() => router.push(`/capsules/${sealedCap.id}`)}
-            style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: 'var(--gold)', fontSize: '1.25rem', fontFamily: 'var(--font-display)', fontStyle: 'italic' }}
-          >
+            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--gold)', fontSize: '1.25rem', fontFamily: 'var(--font-display)', fontStyle: 'italic', marginTop: '3rem' }}>
             Open it →
           </button>
         </div>
@@ -383,52 +368,69 @@ export default function Home() {
   }
 
   /* ── CREATE FLOW ── */
-  const circumference = 2 * Math.PI * 38
+  const circumference = 2 * Math.PI * 40
 
   return (
-    <main className="min-h-screen flex flex-col relative overflow-hidden" style={{ background: 'var(--bg)', color: 'var(--text)' }}>
+    <main style={{ minHeight: '100svh', display: 'flex', flexDirection: 'column', background: 'var(--bg)', color: 'var(--text)', position: 'relative', overflow: 'hidden' }}>
 
       {/* ── LANDING ── */}
       {step === 'landing' && (
         <>
-          <Header showAccount />
-          <div className="flex-1 flex flex-col items-center justify-center px-8 text-center gap-10 pb-24">
-            {/* story ring hero */}
-            <div className="relative flex items-center justify-center">
-              <div className="story-ring slow-spin" style={{ width: '120px', height: '120px' }}>
-                <div className="story-ring-inner" style={{ width: '114px', height: '114px' }}>
-                  <div style={{
-                    width: '108px', height: '108px', borderRadius: '50%',
-                    background: 'var(--surface)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  }}>
-                    <Pill gold />
-                  </div>
-                </div>
-              </div>
-            </div>
+          <div style={{ padding: '3.5rem 2rem 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ ...LABEL }}>beside</span>
+            <a href="/account" style={{
+              width: '30px', height: '30px', borderRadius: '50%',
+              border: '1px solid var(--border-2)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: '11px', color: 'var(--text-2)',
+              fontFamily: 'var(--font-space)',
+              textDecoration: 'none',
+            }}>
+              {getUser()?.name?.[0]?.toUpperCase() ?? '?'}
+            </a>
+          </div>
 
-            <div className="fade-up flex flex-col gap-3">
-              <p className="text-[11px] tracking-[0.22em] uppercase" style={{ color: 'var(--gold-dim)' }}>
-                {geo?.city ?? '···'} · {new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
-              </p>
-              <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '2.6rem', lineHeight: 1.1, fontStyle: 'italic', fontWeight: 400 }}>
-                Who's beside<br />you tonight?
-              </h1>
-            </div>
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '0 2rem 6rem' }}>
+            <p className="fade-up" style={{
+              ...LABEL,
+              color: 'var(--gold-dim)',
+              marginBottom: '2rem',
+            }}>
+              {geo?.city ?? '···'} · {new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+            </p>
 
-            <p className="fade-up-2 text-sm leading-relaxed" style={{ color: 'var(--text-2)', maxWidth: '240px' }}>
+            <h1 className="fade-up" style={{
+              fontFamily: 'var(--font-display)',
+              fontSize: 'clamp(2.8rem, 12vw, 4.2rem)',
+              lineHeight: 1.06,
+              fontStyle: 'italic',
+              fontWeight: 400,
+              marginBottom: '2rem',
+              letterSpacing: '-0.015em',
+            }}>
+              Who's beside<br />you tonight?
+            </h1>
+
+            <p className="fade-up-2" style={{
+              fontSize: '0.9375rem',
+              lineHeight: 1.75,
+              color: 'var(--text-2)',
+              fontFamily: 'var(--font-space)',
+              fontWeight: 300,
+              marginBottom: '3.5rem',
+              maxWidth: '260px',
+            }}>
               One take. Sealed for 1 month.<br />Only people actually beside you.
             </p>
 
             {monthlyUsed ? (
-              <p className="fade-up-3 text-xs" style={{ color: 'var(--text-3)' }}>You've already made a capsule this month.</p>
+              <p style={{ fontSize: '12px', color: 'var(--text-3)', fontFamily: 'var(--font-space)' }}>
+                You've already made a capsule this month.
+              </p>
             ) : (
-              <button
+              <button className="fade-up-3"
                 onClick={() => setStep('tutorial')}
-                className="fade-up-3"
-                style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: 'var(--gold)', fontSize: '1.125rem', fontFamily: 'var(--font-display)', fontStyle: 'italic' }}
-              >
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--gold)', fontSize: '1.25rem', fontFamily: 'var(--font-display)', fontStyle: 'italic', padding: 0, textAlign: 'left' }}>
                 Take a capsule →
               </button>
             )}
@@ -439,175 +441,130 @@ export default function Home() {
 
       {/* ── TUTORIAL ── */}
       {step === 'tutorial' && (
-        <div className="min-h-screen flex flex-col">
-          <Header />
-          <div className="flex-1 flex flex-col items-center justify-center px-6 pb-20 gap-8">
-            <div className="fade-up text-center">
-              <h1 className="text-[1.9rem] leading-tight mb-2" style={{ fontFamily: 'var(--font-display)', fontStyle: 'italic', fontWeight: 400 }}>Here's the drill.</h1>
-              <p className="text-sm" style={{ color: 'var(--text-2)' }}>4 steps. One take each. Sealed for a month.</p>
+        <div style={{ minHeight: '100svh', display: 'flex', flexDirection: 'column' }}>
+          <StepHeader onBack={() => setStep('landing')} step={0} total={4} />
+
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '2rem 2rem 6rem', gap: '2.5rem' }}>
+            <div className="fade-up">
+              <h1 style={{
+                fontFamily: 'var(--font-display)',
+                fontSize: 'clamp(2rem, 8vw, 2.8rem)',
+                fontStyle: 'italic',
+                fontWeight: 400,
+                lineHeight: 1.1,
+                marginBottom: '0.75rem',
+              }}>Here's the drill.</h1>
+              <p style={{ fontSize: '13px', color: 'var(--text-2)', fontFamily: 'var(--font-space)' }}>
+                4 steps. One take each. Sealed for a month.
+              </p>
             </div>
 
-            <div className="fade-up-2 grid grid-cols-2 gap-3 w-full max-w-xs">
-              {/* Voice */}
-              <div style={{
-                background: '#fff', borderRadius: '4px',
-                padding: '16px 12px 14px',
-                boxShadow: '0 3px 14px rgba(30,26,20,0.10), 0 1px 3px rgba(30,26,20,0.06)',
-                transform: 'rotate(-1.8deg)',
-              }}>
-                <div style={{ height: '58px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '10px' }}>
-                  <svg width="44" height="44" viewBox="0 0 44 44" fill="none">
-                    <rect x="6"  y="20" width="4" height="8"  rx="2" fill="#C4422A" opacity="0.35"/>
-                    <rect x="13" y="15" width="4" height="18" rx="2" fill="#C4422A" opacity="0.6"/>
-                    <rect x="20" y="10" width="4" height="24" rx="2" fill="#C4422A"/>
-                    <rect x="27" y="16" width="4" height="14" rx="2" fill="#C4422A" opacity="0.65"/>
-                    <rect x="34" y="20" width="4" height="6"  rx="2" fill="#C4422A" opacity="0.35"/>
-                  </svg>
+            {/* Polaroid-style cards */}
+            <div className="fade-up-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+              {[
+                { label: 'Voice',  sub: '60 seconds', rot: '-1.8deg', icon: VoiceIcon },
+                { label: 'Photo',  sub: 'One shot',   rot: '1.3deg',  icon: PhotoIcon },
+                { label: 'Video',  sub: '10 seconds', rot: '0.9deg',  icon: VideoIcon },
+                { label: 'Tag',    sub: 'Who was there', rot: '-0.7deg', icon: TagIcon },
+              ].map(({ label, sub, rot, icon: Icon }) => (
+                <div key={label} style={{
+                  background: '#F8F2E8',
+                  borderRadius: '2px',
+                  padding: '18px 14px 16px',
+                  transform: `rotate(${rot})`,
+                  boxShadow: '0 4px 18px rgba(26,20,16,0.10), 0 1px 3px rgba(26,20,16,0.07)',
+                }}>
+                  <div style={{ height: '56px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '12px' }}>
+                    <Icon />
+                  </div>
+                  <p style={{ fontSize: '11px', fontWeight: 600, color: '#1A1410', marginBottom: '2px', fontFamily: 'var(--font-space)' }}>{label}</p>
+                  <p style={{ fontSize: '9px', color: 'rgba(26,20,16,0.40)', fontFamily: 'var(--font-space)', letterSpacing: '0.08em' }}>{sub}</p>
                 </div>
-                <p className="text-xs font-semibold" style={{ color: '#1E1A14', marginBottom: '2px' }}>Voice</p>
-                <p style={{ fontSize: '10px', color: 'rgba(30,26,20,0.45)' }}>60 seconds</p>
-              </div>
-
-              {/* Photo */}
-              <div style={{
-                background: '#fff', borderRadius: '4px',
-                padding: '16px 12px 14px',
-                boxShadow: '0 3px 14px rgba(30,26,20,0.10), 0 1px 3px rgba(30,26,20,0.06)',
-                transform: 'rotate(1.3deg)',
-              }}>
-                <div style={{ height: '58px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '10px' }}>
-                  <svg width="44" height="44" viewBox="0 0 44 44" fill="none">
-                    <rect x="5" y="13" width="34" height="23" rx="5" stroke="#C4422A" strokeWidth="1.5"/>
-                    <circle cx="22" cy="24.5" r="7.5" stroke="#C4422A" strokeWidth="1.5"/>
-                    <circle cx="22" cy="24.5" r="3" fill="#C4422A" opacity="0.35"/>
-                    <path d="M16 13v-2a2 2 0 012-2h8a2 2 0 012 2v2" stroke="#C4422A" strokeWidth="1.5" strokeLinecap="round"/>
-                    <circle cx="35" cy="19" r="2" fill="#C4422A" opacity="0.5"/>
-                  </svg>
-                </div>
-                <p className="text-xs font-semibold" style={{ color: '#1E1A14', marginBottom: '2px' }}>Photo</p>
-                <p style={{ fontSize: '10px', color: 'rgba(30,26,20,0.45)' }}>One shot</p>
-              </div>
-
-              {/* Video */}
-              <div style={{
-                background: '#fff', borderRadius: '4px',
-                padding: '16px 12px 14px',
-                boxShadow: '0 3px 14px rgba(30,26,20,0.10), 0 1px 3px rgba(30,26,20,0.06)',
-                transform: 'rotate(0.9deg)',
-              }}>
-                <div style={{ height: '58px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '10px' }}>
-                  <svg width="44" height="44" viewBox="0 0 44 44" fill="none">
-                    <rect x="4" y="11" width="26" height="22" rx="3" stroke="#C4422A" strokeWidth="1.5"/>
-                    <rect x="4" y="11" width="5" height="5" rx="1" fill="#C4422A" opacity="0.22"/>
-                    <rect x="4" y="19" width="5" height="5" rx="1" fill="#C4422A" opacity="0.22"/>
-                    <rect x="4" y="27" width="5" height="5" rx="1" fill="#C4422A" opacity="0.22"/>
-                    <path d="M16 18l10 4-10 5V18z" fill="#C4422A"/>
-                    <path d="M30 17l9-4v18l-9-4V17z" stroke="#C4422A" strokeWidth="1.5" strokeLinejoin="round"/>
-                  </svg>
-                </div>
-                <p className="text-xs font-semibold" style={{ color: '#1E1A14', marginBottom: '2px' }}>Video</p>
-                <p style={{ fontSize: '10px', color: 'rgba(30,26,20,0.45)' }}>10 seconds</p>
-              </div>
-
-              {/* Tag */}
-              <div style={{
-                background: '#fff', borderRadius: '4px',
-                padding: '16px 12px 14px',
-                boxShadow: '0 3px 14px rgba(30,26,20,0.10), 0 1px 3px rgba(30,26,20,0.06)',
-                transform: 'rotate(-0.7deg)',
-              }}>
-                <div style={{ height: '58px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '10px' }}>
-                  <svg width="44" height="44" viewBox="0 0 44 44" fill="none">
-                    <circle cx="15" cy="14" r="5" stroke="#C4422A" strokeWidth="1.5"/>
-                    <path d="M5 34c0-5.5 4.5-9 10-9" stroke="#C4422A" strokeWidth="1.5" strokeLinecap="round"/>
-                    <circle cx="29" cy="14" r="5" stroke="#C4422A" strokeWidth="1.5"/>
-                    <path d="M39 34c0-5.5-4.5-9-10-9" stroke="#C4422A" strokeWidth="1.5" strokeLinecap="round"/>
-                    <rect x="18" y="27" width="3" height="3" rx="0.5" fill="#C4422A" opacity="0.45"/>
-                    <rect x="23" y="27" width="3" height="3" rx="0.5" fill="#C4422A" opacity="0.45"/>
-                    <rect x="18" y="32" width="3" height="3" rx="0.5" fill="#C4422A" opacity="0.45"/>
-                    <rect x="23" y="32" width="3" height="3" rx="0.5" fill="#C4422A" opacity="0.45"/>
-                  </svg>
-                </div>
-                <p className="text-xs font-semibold" style={{ color: '#1E1A14', marginBottom: '2px' }}>Tag</p>
-                <p style={{ fontSize: '10px', color: 'rgba(30,26,20,0.45)' }}>Who was there</p>
-              </div>
+              ))}
             </div>
 
-            <div className="fade-up-3 flex flex-col items-center gap-3">
-              <button
-                onClick={() => setStep('voice')}
-                style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: 'var(--gold)', fontSize: '1.125rem', fontFamily: 'var(--font-display)', fontStyle: 'italic' }}
-              >
-                Start →
-              </button>
-            </div>
+            <button className="fade-up-3"
+              onClick={() => setStep('voice')}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--gold)', fontSize: '1.25rem', fontFamily: 'var(--font-display)', fontStyle: 'italic', padding: 0, textAlign: 'left' }}>
+              Start →
+            </button>
           </div>
         </div>
       )}
 
       {/* ── VOICE ── */}
       {step === 'voice' && (
-        <div className="min-h-screen flex flex-col">
-          <StepHeader label="Voice" onBack={() => setStep('landing')} step={1} total={4} />
-          <div className="flex-1 flex flex-col items-center justify-center px-8 gap-8">
-            <div className="fade-up text-center">
-              <h2 className="text-3xl mb-2" style={{ fontFamily: 'var(--font-display)', fontStyle: 'italic', fontWeight: 400 }}>Say something.</h2>
-              <p className="text-sm" style={{ color: 'var(--text-2)' }}>One take. No edits.</p>
+        <div style={{ minHeight: '100svh', display: 'flex', flexDirection: 'column' }}>
+          <StepHeader onBack={() => setStep('landing')} step={1} total={4} />
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '2rem', gap: '3rem' }}>
+
+            <div className="fade-up" style={{ textAlign: 'center' }}>
+              <h2 style={{
+                fontFamily: 'var(--font-display)',
+                fontSize: 'clamp(2.4rem, 10vw, 3.2rem)',
+                fontStyle: 'italic',
+                fontWeight: 400,
+                lineHeight: 1.08,
+                marginBottom: '0.75rem',
+              }}>Say something.</h2>
+              <p style={{ fontSize: '13px', color: 'var(--text-2)', fontFamily: 'var(--font-space)' }}>One take. No edits.</p>
             </div>
 
-            {/* waveform area */}
-            <div className="w-full px-2" style={{ height: '80px' }}>
+            {/* waveform */}
+            <div style={{ width: '100%', paddingLeft: '8px', paddingRight: '8px', height: '72px' }}>
               {(recording || audioBlob) ? (
                 <Waveform
                   stream={recording ? audioStream : null}
                   frozen={!!audioBlob && !recording}
                   frozenData={waveSnap}
                   onFreezeData={handleWaveSnap}
-                  color="#C4422A"
-                  height={80}
+                  color="#A86828"
+                  height={72}
                 />
               ) : (
-                <div style={{ height: '80px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <div style={{ width: '100%', height: '1px', background: 'var(--border)' }} />
+                <div style={{ height: '72px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <div style={{ width: '100%', height: '1px', background: 'var(--border-2)' }} />
                 </div>
               )}
             </div>
 
             {/* record button */}
-            <div className="relative flex items-center justify-center" style={{ width: '120px', height: '120px' }}>
+            <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', width: '110px', height: '110px' }}>
               {recording && <>
-                <div className="pulse-ring   absolute rounded-full" style={{ width: '80px', height: '80px', border: '1px solid var(--gold)' }} />
-                <div className="pulse-ring-2 absolute rounded-full" style={{ width: '80px', height: '80px', border: '1px solid var(--gold)' }} />
-                <div className="pulse-ring-3 absolute rounded-full" style={{ width: '80px', height: '80px', border: '1px solid var(--gold)' }} />
+                <div className="pulse-ring absolute rounded-full" style={{ width: '72px', height: '72px', border: '1px solid var(--gold)' }} />
+                <div className="pulse-ring-2 absolute rounded-full" style={{ width: '72px', height: '72px', border: '1px solid var(--gold)' }} />
+                <div className="pulse-ring-3 absolute rounded-full" style={{ width: '72px', height: '72px', border: '1px solid var(--gold)' }} />
               </>}
               <button
                 onClick={recording ? stopRecording : startRecording}
-                className="relative z-10 rounded-full transition-all duration-300 active:scale-90"
                 style={{
-                  width: '80px', height: '80px',
+                  width: '72px', height: '72px', borderRadius: '50%',
                   border: recording ? '1px solid var(--gold)' : '1px solid var(--border-2)',
-                  background: recording ? 'rgba(196,66,42,0.07)' : 'var(--surface)',
+                  background: recording ? 'rgba(168,104,40,0.06)' : 'var(--surface)',
+                  cursor: 'pointer',
+                  position: 'relative', zIndex: 10,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  transition: 'all 0.3s ease',
                 }}
               >
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div style={{
-                    width: recording ? '22px' : '14px',
-                    height: recording ? '22px' : '14px',
-                    borderRadius: recording ? '4px' : '50%',
-                    background: 'var(--gold)',
-                    boxShadow: recording ? '0 0 14px rgba(196,66,42,0.45)' : 'none',
-                    transition: 'all 0.3s ease',
-                  }} />
-                </div>
+                <div style={{
+                  width: recording ? '20px' : '12px',
+                  height: recording ? '20px' : '12px',
+                  borderRadius: recording ? '4px' : '50%',
+                  background: 'var(--gold)',
+                  transition: 'all 0.3s ease',
+                }} />
               </button>
             </div>
 
-            <p className="text-[10px] tracking-[0.2em] uppercase" style={{ color: 'var(--text-3)' }}>
+            <p style={{ ...LABEL }}>
               {recording ? 'tap to stop' : audioBlob ? 'recorded' : 'tap to record'}
             </p>
 
             {audioBlob && !recording && (
-              <button onClick={() => setStep('photo')} className="fade-up" style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: 'var(--gold)', fontSize: '1.125rem', fontFamily: 'var(--font-display)', fontStyle: 'italic' }}>
+              <button className="fade-up"
+                onClick={() => setStep('photo')}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--gold)', fontSize: '1.25rem', fontFamily: 'var(--font-display)', fontStyle: 'italic', padding: 0 }}>
                 Continue →
               </button>
             )}
@@ -617,113 +574,121 @@ export default function Home() {
 
       {/* ── PHOTO ── */}
       {step === 'photo' && (
-        <div className="min-h-screen flex flex-col">
-          <StepHeader label="Photo" onBack={() => setStep('voice')} step={2} total={4} />
-          <div className="flex-1 flex flex-col items-center justify-center px-8 gap-8">
-            <div className="fade-up text-center">
-              <h2 className="text-3xl mb-2" style={{ fontFamily: 'var(--font-display)', fontStyle: 'italic', fontWeight: 400 }}>Who's beside you?</h2>
-              <p className="text-sm" style={{ color: 'var(--text-2)' }}>One shot. Make it real.</p>
+        <div style={{ minHeight: '100svh', display: 'flex', flexDirection: 'column' }}>
+          <StepHeader onBack={() => setStep('voice')} step={2} total={4} />
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '2rem', gap: '2rem' }}>
+
+            <div className="fade-up" style={{ textAlign: 'center' }}>
+              <h2 style={{
+                fontFamily: 'var(--font-display)',
+                fontSize: 'clamp(2.4rem, 10vw, 3.2rem)',
+                fontStyle: 'italic',
+                fontWeight: 400,
+                lineHeight: 1.08,
+                marginBottom: '0.75rem',
+              }}>Who's beside you?</h2>
+              <p style={{ fontSize: '13px', color: 'var(--text-2)', fontFamily: 'var(--font-space)' }}>One shot. Make it real.</p>
             </div>
 
             {!camStream && !photoUrl && (
-              <button onClick={() => openCamera()} className="relative rounded-2xl overflow-hidden active:scale-95 transition-all" style={{
-                width: '260px', height: '260px',
+              <button onClick={() => openCamera()} style={{
+                width: '100%', maxWidth: '300px', aspectRatio: '1',
                 border: '1px solid var(--border-2)',
+                borderRadius: '4px',
                 background: 'var(--surface)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: '12px',
+                cursor: 'pointer',
+                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '12px',
               }}>
-                <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
-                  <rect x="4" y="11" width="32" height="22" rx="5" stroke="var(--text-3)" strokeWidth="1.5"/>
-                  <circle cx="20" cy="22" r="7.5" stroke="var(--text-3)" strokeWidth="1.5"/>
-                  <path d="M14 11V9a2 2 0 012-2h8a2 2 0 012 2v2" stroke="var(--text-3)" strokeWidth="1.5" strokeLinecap="round"/>
-                  <circle cx="32" cy="17" r="2" fill="var(--text-3)"/>
-                </svg>
-                <span className="text-xs tracking-[0.12em]" style={{ color: 'var(--text-3)' }}>Open camera</span>
+                <PhotoIcon />
+                <span style={{ ...LABEL }}>Open camera</span>
               </button>
             )}
 
             {camStream && (
-              <div className="flex flex-col items-center gap-6">
-                <div className="iris-open rounded-2xl overflow-hidden relative" style={{ width: '260px', height: '260px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px' }}>
+                <div className="iris-open" style={{ width: '100%', maxWidth: '300px', aspectRatio: '1', borderRadius: '4px', overflow: 'hidden', position: 'relative' }}>
                   <video ref={videoRef} autoPlay playsInline muted style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  <div style={{
-                    position: 'absolute', inset: 0, pointerEvents: 'none',
-                    border: '1px solid rgba(255,255,255,0.15)', borderRadius: '16px',
-                  }}>
-                    <div style={{ position: 'absolute', top: '50%', left: '16px', right: '16px', height: '1px', background: 'rgba(255,255,255,0.10)' }} />
-                    <div style={{ position: 'absolute', left: '50%', top: '16px', bottom: '16px', width: '1px', background: 'rgba(255,255,255,0.10)' }} />
+                  {/* crosshair overlay */}
+                  <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
+                    <div style={{ position: 'absolute', top: '50%', left: '16px', right: '16px', height: '1px', background: 'rgba(255,255,255,0.12)' }} />
+                    <div style={{ position: 'absolute', left: '50%', top: '16px', bottom: '16px', width: '1px', background: 'rgba(255,255,255,0.12)' }} />
                   </div>
-                  {/* flip button */}
                   <button onClick={flipCamera} style={{
-                    position: 'absolute', top: '12px', right: '12px',
-                    width: '36px', height: '36px', borderRadius: '50%',
-                    background: 'rgba(0,0,0,0.45)',
-                    backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)',
+                    position: 'absolute', top: '10px', right: '10px',
+                    width: '32px', height: '32px', borderRadius: '50%',
+                    background: 'rgba(0,0,0,0.4)',
+                    backdropFilter: 'blur(8px)',
                     border: '1px solid rgba(255,255,255,0.18)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
                   }}>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M1 4v6h6"/><path d="M23 20v-6h-6"/>
                       <path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4-4.64 4.36A9 9 0 0 1 3.51 15"/>
                     </svg>
                   </button>
                 </div>
-                <button onClick={takePhoto} className="rounded-full flex items-center justify-center transition-all active:scale-90" style={{
-                  width: '60px', height: '60px',
-                  background: 'linear-gradient(145deg, rgba(196,66,42,0.10) 0%, rgba(196,66,42,0.04) 100%)',
+                <button onClick={takePhoto} style={{
+                  width: '56px', height: '56px', borderRadius: '50%',
+                  background: 'var(--surface)',
                   border: '1.5px solid var(--gold)',
-                  boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.5), 0 2px 8px rgba(30,26,20,0.10)',
+                  cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
                 }}>
-                  <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--gold)', boxShadow: '0 0 8px rgba(196,66,42,0.5)' }} />
+                  <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--gold)' }} />
                 </button>
               </div>
             )}
 
             {photoUrl && !camStream && (
-              <div className="flex flex-col items-center gap-6">
-                <div className="rounded-2xl overflow-hidden" style={{ width: '260px', height: '260px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px' }}>
+                <div style={{ width: '100%', maxWidth: '300px', aspectRatio: '1', borderRadius: '4px', overflow: 'hidden' }}>
                   <img src={photoUrl} className={developing ? 'developing' : ''} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" />
                 </div>
                 {!developing && (
-                  <div className="flex gap-3">
-                    <button onClick={() => { setPhotoUrl(null) }} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: 'var(--text-3)', fontSize: '0.875rem' }}>Retake</button>
-                    <button onClick={() => setStep('video')} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: 'var(--gold)', fontSize: '1.125rem', fontFamily: 'var(--font-display)', fontStyle: 'italic' }}>Continue →</button>
+                  <div style={{ display: 'flex', gap: '24px' }}>
+                    <button onClick={() => setPhotoUrl(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '13px', color: 'var(--text-3)', fontFamily: 'var(--font-space)' }}>Retake</button>
+                    <button onClick={() => setStep('video')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--gold)', fontSize: '1.25rem', fontFamily: 'var(--font-display)', fontStyle: 'italic' }}>Continue →</button>
                   </div>
                 )}
               </div>
             )}
-            <canvas ref={canvasRef} className="hidden" />
+            <canvas ref={canvasRef} style={{ display: 'none' }} />
           </div>
         </div>
       )}
 
       {/* ── VIDEO ── */}
       {step === 'video' && (
-        <div className="min-h-screen flex flex-col">
-          <StepHeader label="Video" onBack={() => setStep('photo')} step={3} total={4} />
-          <div className="flex-1 flex flex-col items-center justify-center px-8 gap-8">
-            <div className="fade-up text-center">
-              <h2 className="text-3xl mb-2" style={{ fontFamily: 'var(--font-display)', fontStyle: 'italic', fontWeight: 400 }}>Last one.</h2>
-              <p className="text-sm" style={{ color: 'var(--text-2)' }}>10 seconds. Just be here.</p>
+        <div style={{ minHeight: '100svh', display: 'flex', flexDirection: 'column' }}>
+          <StepHeader onBack={() => setStep('photo')} step={3} total={4} />
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '2rem', gap: '2rem' }}>
+
+            <div className="fade-up" style={{ textAlign: 'center' }}>
+              <h2 style={{
+                fontFamily: 'var(--font-display)',
+                fontSize: 'clamp(2.4rem, 10vw, 3.2rem)',
+                fontStyle: 'italic',
+                fontWeight: 400,
+                lineHeight: 1.08,
+                marginBottom: '0.75rem',
+              }}>Last one.</h2>
+              <p style={{ fontSize: '13px', color: 'var(--text-2)', fontFamily: 'var(--font-space)' }}>10 seconds. Just be here.</p>
             </div>
 
             {!vidStream && !videoBlob && (
-              <div className="flex flex-col items-center gap-5">
-                <button onClick={startVideo} className="rounded-full flex items-center justify-center transition-all active:scale-90" style={{
-                  width: '90px', height: '90px',
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
+                <button onClick={startVideo} style={{
+                  width: '80px', height: '80px', borderRadius: '50%',
                   background: 'var(--surface)',
                   border: '1.5px solid var(--border-2)',
-                  boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.6), 0 2px 8px rgba(30,26,20,0.08)',
+                  cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
                 }}>
-                  <div className="vid-pulse" style={{ width: '16px', height: '16px', borderRadius: '50%', background: 'var(--gold)', boxShadow: '0 0 10px rgba(196,66,42,0.45)' }} />
+                  <div className="vid-pulse" style={{ width: '16px', height: '16px', borderRadius: '50%', background: 'var(--gold)' }} />
                 </button>
-                {/* camera flip */}
                 <button onClick={() => setVidFacing(f => f === 'environment' ? 'user' : 'environment')}
-                  className="flex items-center gap-2 transition-all active:scale-95"
-                  style={{ color: 'var(--text-3)', fontSize: '12px' }}
-                >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', ...LABEL, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M1 4v6h6"/><path d="M23 20v-6h-6"/>
                     <path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4-4.64 4.36A9 9 0 0 1 3.51 15"/>
                   </svg>
@@ -733,38 +698,36 @@ export default function Home() {
             )}
 
             {vidStream && (
-              <div className="flex flex-col items-center gap-6">
-                <div className="relative rounded-2xl overflow-hidden" style={{ width: '260px', height: '260px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px' }}>
+                <div style={{ position: 'relative', width: '100%', maxWidth: '300px', aspectRatio: '1', borderRadius: '4px', overflow: 'hidden' }}>
                   <video ref={vidRef} autoPlay playsInline muted style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  {/* timebar */}
-                  <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '3px', background: 'rgba(0,0,0,0.4)' }}>
-                    <div style={{
-                      height: '100%',
-                      width: `${vidProgress * 100}%`,
-                      background: 'var(--gold)',
-                      transition: 'width 0.1s linear',
-                      boxShadow: '0 0 8px rgba(196,66,42,0.45)',
-                    }} />
+                  <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '2px', background: 'rgba(0,0,0,0.3)' }}>
+                    <div style={{ height: '100%', width: `${vidProgress * 100}%`, background: 'var(--gold)', transition: 'width 0.1s linear' }} />
                   </div>
-                  {/* pulse dot */}
-                  <div style={{ position: 'absolute', top: '12px', right: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <div className="vid-pulse" style={{ width: '7px', height: '7px', borderRadius: '50%', background: 'var(--gold)' }} />
+                  <div style={{ position: 'absolute', top: '10px', right: '10px' }}>
+                    <div className="vid-pulse" style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--gold)' }} />
                   </div>
                 </div>
-                <button onClick={stopVideo} className="rounded-full flex items-center justify-center" style={{ width: '52px', height: '52px', border: '1px solid var(--gold)' }}>
+                <button onClick={stopVideo} style={{
+                  width: '48px', height: '48px', borderRadius: '50%',
+                  border: '1px solid var(--gold)',
+                  background: 'none',
+                  cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
                   <div style={{ width: '14px', height: '14px', borderRadius: '3px', background: 'var(--gold)' }} />
                 </button>
               </div>
             )}
 
             {videoBlob && !vidStream && (
-              <div className="flex flex-col items-center gap-6">
-                <div className="rounded-2xl overflow-hidden" style={{ width: '260px', height: '260px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px' }}>
+                <div style={{ width: '100%', maxWidth: '300px', aspectRatio: '1', borderRadius: '4px', overflow: 'hidden' }}>
                   <video src={URL.createObjectURL(videoBlob)} controls style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 </div>
-                <div className="flex gap-3">
-                  <button onClick={() => { setVideoBlob(null); setVidProgress(0) }} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: 'var(--text-3)', fontSize: '0.875rem' }}>Retake</button>
-                  <button onClick={() => setStep('tag')} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: 'var(--gold)', fontSize: '1.125rem', fontFamily: 'var(--font-display)', fontStyle: 'italic' }}>Continue →</button>
+                <div style={{ display: 'flex', gap: '24px' }}>
+                  <button onClick={() => { setVideoBlob(null); setVidProgress(0) }} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '13px', color: 'var(--text-3)', fontFamily: 'var(--font-space)' }}>Retake</button>
+                  <button onClick={() => setStep('tag')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--gold)', fontSize: '1.25rem', fontFamily: 'var(--font-display)', fontStyle: 'italic' }}>Continue →</button>
                 </div>
               </div>
             )}
@@ -774,137 +737,176 @@ export default function Home() {
 
       {/* ── TAG ── */}
       {step === 'tag' && (
-        <div className="min-h-screen flex flex-col">
-          <StepHeader label="Tag" onBack={() => setStep('video')} step={4} total={4} />
-          <div className="flex-1 flex flex-col px-8 pt-8 gap-6 overflow-y-auto pb-8">
+        <div style={{ minHeight: '100svh', display: 'flex', flexDirection: 'column' }}>
+          <StepHeader onBack={() => setStep('video')} step={4} total={4} />
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '2rem', paddingTop: '2rem', gap: '2rem', overflowY: 'auto', paddingBottom: '2rem' }}>
 
             <div className="fade-up">
-              <h2 className="text-3xl mb-2" style={{ fontFamily: 'var(--font-display)', fontStyle: 'italic', fontWeight: 400 }}>Who was there?</h2>
-              <p className="text-sm leading-relaxed" style={{ color: 'var(--text-2)' }}>
+              <h2 style={{
+                fontFamily: 'var(--font-display)',
+                fontSize: 'clamp(2.4rem, 10vw, 3.2rem)',
+                fontStyle: 'italic',
+                fontWeight: 400,
+                lineHeight: 1.08,
+                marginBottom: '0.75rem',
+              }}>Who was there?</h2>
+              <p style={{ fontSize: '13px', color: 'var(--text-2)', fontFamily: 'var(--font-space)' }}>
                 Share the QR so people can join instantly.
               </p>
             </div>
 
-            {/* QR section */}
+            {/* QR */}
             {joinUrl && (
-              <div className="fade-up-2 flex flex-col items-center gap-4 py-4 rounded-2xl" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
-                <p className="text-[10px] tracking-[0.2em] uppercase" style={{ color: 'var(--text-3)' }}>Scan to join</p>
-                <canvas ref={qrCanvasRef} style={{ borderRadius: '12px' }} />
+              <div className="fade-up-2" style={{
+                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px',
+                padding: '24px',
+                background: 'var(--surface)',
+                borderRadius: '4px',
+              }}>
+                <p style={{ ...LABEL }}>Scan to join</p>
+                <canvas ref={qrCanvasRef} style={{ borderRadius: '4px' }} />
                 <button
                   onClick={() => { if (joinUrl) navigator.clipboard?.writeText(joinUrl) }}
-                  className="flex items-center gap-2 px-4 py-2 rounded-full text-xs transition-all active:scale-95"
-                  style={{ background: 'rgba(196,66,42,0.07)', color: 'var(--gold)', border: '1px solid rgba(196,66,42,0.2)' }}
-                >
+                  style={{
+                    background: 'none', border: 'none', cursor: 'pointer',
+                    ...LABEL, color: 'var(--gold)',
+                  }}>
                   Copy link
                 </button>
               </div>
             )}
 
-            {/* Manual add */}
-            <div className="relative">
-              <input
-                type="text"
-                value={tagInput}
-                onChange={e => setTagInput(e.target.value)}
-                onKeyDown={e => {
-                  if (e.key === 'Enter' && tagInput.trim()) {
-                    const n = tagInput.trim()
-                    setMembers(m => [...m, { name: n, initial: n[0].toUpperCase() }])
-                    setTagInput('')
-                  }
-                }}
-                placeholder="Or type a name — press Enter"
-                style={{
-                  width: '100%', background: 'rgba(30,26,20,0.04)',
-                  border: '1px solid var(--border)', borderRadius: '16px',
-                  padding: '14px 18px', color: 'var(--text)', fontSize: '14px',
-                  outline: 'none',
-                }}
-              />
-            </div>
+            {/* Manual input */}
+            <input
+              type="text"
+              value={tagInput}
+              onChange={e => setTagInput(e.target.value)}
+              onKeyDown={e => {
+                if (e.key === 'Enter' && tagInput.trim()) {
+                  const n = tagInput.trim()
+                  setMembers(m => [...m, { name: n, initial: n[0].toUpperCase() }])
+                  setTagInput('')
+                }
+              }}
+              placeholder="Or type a name — press Enter"
+              style={{
+                width: '100%',
+                background: 'transparent',
+                border: 'none',
+                borderBottom: '1px solid var(--border-2)',
+                padding: '12px 0',
+                fontSize: '16px',
+                color: 'var(--text)',
+                fontFamily: 'var(--font-inter)',
+                outline: 'none',
+              }}
+            />
 
             {members.length > 0 && (
-              <div className="flex flex-col gap-2">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                 {members.map((m, i) => (
-                  <div key={i} className="flex items-center justify-between px-4 py-3 rounded-xl" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs" style={{ background: 'var(--border-2)', color: 'var(--gold)' }}>{m.initial}</div>
+                  <div key={i} style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    padding: '12px 0',
+                    borderBottom: '1px solid var(--border)',
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <div style={{
+                        width: '32px', height: '32px', borderRadius: '50%',
+                        background: 'var(--surface)',
+                        border: '1px solid var(--border-2)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontSize: '12px', color: 'var(--text-2)',
+                        fontFamily: 'var(--font-space)',
+                      }}>{m.initial}</div>
                       <div>
-                        <p className="text-sm">{m.name}</p>
-                        {m.email && <p className="text-[10px]" style={{ color: 'var(--text-3)' }}>{m.email}</p>}
+                        <p style={{ fontSize: '14px', fontFamily: 'var(--font-space)' }}>{m.name}</p>
+                        {m.email && <p style={{ fontSize: '10px', color: 'var(--text-3)', fontFamily: 'var(--font-space)' }}>{m.email}</p>}
                       </div>
                     </div>
-                    <button onClick={() => setMembers(ms => ms.filter((_, j) => j !== i))} style={{ color: 'var(--text-3)', fontSize: '18px', lineHeight: 1 }}>×</button>
+                    <button onClick={() => setMembers(ms => ms.filter((_, j) => j !== i))}
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-3)', fontSize: '18px', lineHeight: 1 }}>×</button>
                   </div>
                 ))}
               </div>
             )}
 
-            <div className="flex flex-col gap-3">
-              <button onClick={() => setStep('seal')} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: 'var(--gold)', fontSize: '1.125rem', fontFamily: 'var(--font-display)', fontStyle: 'italic' }}>
-                {members.length > 0 ? 'Continue to seal →' : 'Seal alone →'}
-              </button>
-            </div>
+            <button onClick={() => setStep('seal')} style={{
+              background: 'none', border: 'none', cursor: 'pointer',
+              color: 'var(--gold)', fontSize: '1.25rem',
+              fontFamily: 'var(--font-display)', fontStyle: 'italic', padding: 0, textAlign: 'left',
+            }}>
+              {members.length > 0 ? 'Continue to seal →' : 'Seal alone →'}
+            </button>
           </div>
         </div>
       )}
 
       {/* ── SEAL ── */}
       {step === 'seal' && (
-        <div className="min-h-screen flex flex-col items-center justify-center px-8 text-center gap-10">
+        <div style={{ minHeight: '100svh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '2rem', textAlign: 'center', gap: '3rem' }}>
           <div className="fade-up">
-            <p className="text-xs tracking-[0.25em] uppercase mb-4" style={{ color: 'var(--gold-dim)' }}>Seal</p>
-            <h2 className="text-3xl mb-3" style={{ fontFamily: 'var(--font-display)', fontStyle: 'italic', fontWeight: 400 }}>Hold to seal.</h2>
-            <p className="text-sm leading-relaxed" style={{ color: 'var(--text-2)' }}>
+            <p style={{ ...LABEL, color: 'var(--gold-dim)', marginBottom: '1.5rem' }}>Seal</p>
+            <h2 style={{
+              fontFamily: 'var(--font-display)',
+              fontSize: 'clamp(2.4rem, 10vw, 3.2rem)',
+              fontStyle: 'italic',
+              fontWeight: 400,
+              marginBottom: '1rem',
+              lineHeight: 1.08,
+            }}>Hold to seal.</h2>
+            <p style={{ fontSize: '13px', color: 'var(--text-2)', fontFamily: 'var(--font-space)', lineHeight: 1.65 }}>
               Hold for 3 seconds.<br />Cannot be undone.
             </p>
           </div>
 
           {/* long-press ring */}
           <div
-            className="relative flex items-center justify-center select-none"
-            style={{ width: '120px', height: '120px', cursor: 'pointer', WebkitUserSelect: 'none' }}
-            onMouseDown={startHold}
-            onMouseUp={endHold}
-            onMouseLeave={endHold}
-            onTouchStart={startHold}
-            onTouchEnd={endHold}
+            style={{ position: 'relative', width: '130px', height: '130px', cursor: 'pointer', userSelect: 'none', WebkitUserSelect: 'none' }}
+            onMouseDown={startHold} onMouseUp={endHold} onMouseLeave={endHold}
+            onTouchStart={startHold} onTouchEnd={endHold}
           >
-            <svg width="120" height="120" viewBox="0 0 120 120" style={{ position: 'absolute', top: 0, left: 0, transform: 'rotate(-90deg)' }}>
-              <circle cx="60" cy="60" r="38" fill="none" stroke="var(--border-2)" strokeWidth="2" />
+            <svg width="130" height="130" viewBox="0 0 130 130" style={{ position: 'absolute', top: 0, left: 0, transform: 'rotate(-90deg)' }}>
+              <circle cx="65" cy="65" r="40" fill="none" stroke="var(--border-2)" strokeWidth="1.5" />
               <circle
-                cx="60" cy="60" r="38" fill="none"
-                stroke="var(--gold)" strokeWidth="2"
+                cx="65" cy="65" r="40" fill="none"
+                stroke="var(--gold)" strokeWidth="1.5"
                 strokeLinecap="round"
                 strokeDasharray={circumference}
                 strokeDashoffset={circumference * (1 - holdPct)}
-                style={{ transition: 'stroke-dashoffset 0.05s linear', filter: holdPct > 0 ? 'drop-shadow(0 0 5px rgba(196,66,42,0.5))' : 'none' }}
+                style={{ transition: 'stroke-dashoffset 0.05s linear' }}
               />
             </svg>
             <div style={{
-              width: '80px', height: '80px', borderRadius: '50%',
-              background: holdPct > 0 ? `rgba(196,66,42,${0.05 + holdPct * 0.10})` : 'var(--surface)',
-              border: '1px solid var(--border-2)',
+              position: 'absolute', inset: 0,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              transition: 'background 0.1s',
             }}>
-              <Pill gold={holdPct > 0} />
+              <div style={{
+                width: '80px', height: '80px', borderRadius: '50%',
+                background: holdPct > 0 ? `rgba(168,104,40,${0.05 + holdPct * 0.12})` : 'var(--surface)',
+                border: '1px solid var(--border-2)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                transition: 'background 0.1s',
+              }}>
+                <FilmPill gold={holdPct > 0} />
+              </div>
             </div>
           </div>
 
-          <button onClick={() => setStep('tag')} className="text-xs tracking-[0.15em]" style={{ color: 'var(--text-3)' }}>back</button>
+          <button onClick={() => setStep('tag')} style={{ background: 'none', border: 'none', cursor: 'pointer', ...LABEL }}>back</button>
         </div>
       )}
 
       {/* ── SEALED ANIMATION ── */}
       {step === 'sealed-anim' && (
-        <div className="min-h-screen flex flex-col items-center justify-center" style={{ background: 'var(--bg)' }}>
+        <div style={{ minHeight: '100svh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'var(--bg)' }}>
           <div className="stamp">
-            <div className="w-36 h-36 rounded-full flex items-center justify-center" style={{
+            <div style={{
+              width: '120px', height: '120px', borderRadius: '50%',
               background: 'var(--gold)',
-              boxShadow: '0 0 60px rgba(196,66,42,0.3)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}>
-              <span style={{ fontFamily: 'var(--font-display)', fontSize: '64px', color: 'var(--bg)', fontWeight: 700 }}>B</span>
+              <span style={{ fontFamily: 'var(--font-display)', fontSize: '56px', color: 'var(--bg)', fontWeight: 700, fontStyle: 'italic' }}>B</span>
             </div>
           </div>
         </div>
@@ -912,32 +914,39 @@ export default function Home() {
 
       {/* ── DONE ── */}
       {step === 'done' && sealedData && (
-        <div className="min-h-screen flex flex-col items-center justify-center px-8 text-center gap-8">
-          <div className="sealed-text text-xs tracking-[0.35em] uppercase" style={{ color: 'var(--gold)' }}>Sealed</div>
-          <div className="fade-up flex flex-col gap-2">
-            <h2 className="text-4xl" style={{ fontFamily: 'var(--font-display)', fontStyle: 'italic', fontWeight: 400 }}>
-              See you in<br />1 month.
-            </h2>
-          </div>
-          <div className="fade-up-2 flex flex-col items-center gap-1">
-            <p className="text-sm" style={{ color: 'var(--text-2)' }}>{sealedData.city}</p>
-            <p className="text-xs" style={{ color: 'var(--text-3)' }}>
+        <div style={{ minHeight: '100svh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '2rem', textAlign: 'center', gap: '0' }}>
+          <p className="sealed-text" style={{ ...LABEL, color: 'var(--gold)', marginBottom: '2rem' }}>Sealed</p>
+          <h2 className="fade-up" style={{
+            fontFamily: 'var(--font-display)',
+            fontSize: 'clamp(2.8rem, 12vw, 4rem)',
+            fontStyle: 'italic',
+            fontWeight: 400,
+            lineHeight: 1.06,
+            marginBottom: '2rem',
+            letterSpacing: '-0.015em',
+          }}>
+            See you in<br />1 month.
+          </h2>
+          <div className="fade-up-2" style={{ marginBottom: '3rem' }}>
+            <p style={{ fontSize: '13px', color: 'var(--text-2)', fontFamily: 'var(--font-space)' }}>{sealedData.city}</p>
+            <p style={{ fontSize: '11px', color: 'var(--text-3)', fontFamily: 'var(--font-space)', marginTop: '4px' }}>
               Opens {new Date(sealedData.opensAt!).toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}
             </p>
             {sealedData.members.length > 0 && (
-              <p className="text-xs mt-1" style={{ color: 'var(--text-3)' }}>
+              <p style={{ fontSize: '11px', color: 'var(--text-3)', fontFamily: 'var(--font-space)', marginTop: '4px' }}>
                 {sealedData.members.length + 1} people sealed inside
               </p>
             )}
           </div>
-          <button
-            onClick={share}
-            className="fade-up-3"
-            style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: 'var(--gold)', fontSize: '1.125rem', fontFamily: 'var(--font-display)', fontStyle: 'italic' }}
-          >
+          <button className="fade-up-3" onClick={share} style={{
+            background: 'none', border: 'none', cursor: 'pointer',
+            color: 'var(--gold)', fontSize: '1.25rem',
+            fontFamily: 'var(--font-display)', fontStyle: 'italic',
+            marginBottom: '1.5rem',
+          }}>
             Share to Stories →
           </button>
-          <button onClick={() => router.push('/capsules')} className="text-xs tracking-[0.12em]" style={{ color: 'var(--text-3)' }}>
+          <button onClick={() => router.push('/capsules')} style={{ background: 'none', border: 'none', cursor: 'pointer', ...LABEL }}>
             View capsules
           </button>
         </div>
@@ -946,50 +955,32 @@ export default function Home() {
   )
 }
 
-/* ── Shared sub-components ─────────────────────────────────────────── */
-function Header({ showAccount }: { showAccount?: boolean }) {
-  const initial = getUser()?.name?.[0]?.toUpperCase() ?? '?'
-  return (
-    <div className="flex items-center justify-between px-6 pt-14 pb-6">
-      <div className="w-8" />
-      <span className="text-base font-light tracking-[0.4em]" style={{
-        fontFamily: 'var(--font-space)',
-        color: 'var(--text)',
-      }}>beside</span>
-      {showAccount
-        ? <a href="/account" className="w-8 h-8 rounded-full flex items-center justify-center text-[10px]"
-            style={{ background: 'rgba(196,66,42,0.08)', color: 'var(--gold)', border: '1px solid rgba(196,66,42,0.15)' }}>{initial}</a>
-        : <div className="w-8" />}
-    </div>
-  )
-}
+/* ── Sub-components ── */
 
-function StepHeader({ label, onBack, step, total }: { label: string; onBack: () => void; step: number; total: number }) {
+function StepHeader({ onBack, step, total }: { onBack: () => void; step: number; total: number }) {
   return (
     <div>
-      <div className="flex items-center justify-between px-6 pt-14 pb-5">
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '3.5rem 2rem 1.5rem' }}>
         <button onClick={onBack} style={{
           width: '32px', height: '32px', borderRadius: '50%',
-          background: 'rgba(30,26,20,0.07)',
+          background: 'rgba(26,20,16,0.06)',
+          border: 'none', cursor: 'pointer',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
         }}>
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-            <path d="M10 3L5 8l5 5" stroke="rgba(30,26,20,0.45)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+            <path d="M10 3L5 8l5 5" stroke="rgba(26,20,16,0.38)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </button>
-        <span className="text-base font-light tracking-[0.4em]" style={{
-          fontFamily: 'var(--font-space)',
-          color: 'var(--text)',
-        }}>beside</span>
-        <span className="text-[10px] tabular-nums" style={{ color: 'var(--text-3)', width: '32px', textAlign: 'right' }}>{step}/{total}</span>
+        <span style={{ fontFamily: 'var(--font-space)', fontSize: '10px', letterSpacing: '0.4em', textTransform: 'uppercase', color: 'var(--text-3)' }}>beside</span>
+        <span style={{ fontFamily: 'var(--font-space)', fontSize: '10px', color: 'var(--text-3)', width: '32px', textAlign: 'right' }}>{step}/{total}</span>
       </div>
-      {/* step bar */}
-      <div className="flex gap-1.5 px-6">
+      {/* progress bar */}
+      <div style={{ display: 'flex', gap: '4px', paddingLeft: '2rem', paddingRight: '2rem' }}>
         {Array.from({ length: total }).map((_, i) => (
-          <div key={i} className="flex-1 rounded-full transition-all duration-500" style={{
-            height: '2px',
-            background: i < step ? 'var(--gold)' : 'rgba(30,26,20,0.12)',
-            boxShadow: i === step - 1 ? '0 0 6px rgba(196,66,42,0.3)' : 'none',
+          <div key={i} style={{
+            flex: 1, height: '1px', borderRadius: '1px',
+            background: i < step ? 'var(--gold)' : 'var(--border-2)',
+            transition: 'background 0.4s',
           }} />
         ))}
       </div>
@@ -997,24 +988,62 @@ function StepHeader({ label, onBack, step, total }: { label: string; onBack: () 
   )
 }
 
-function Pill({ gold }: { gold?: boolean }) {
+function FilmPill({ gold }: { gold?: boolean }) {
   return (
     <div style={{
-      width: '18px', height: '30px', borderRadius: '10px',
-      border: `1.5px solid ${gold ? '#C4422A' : 'rgba(30,26,20,0.20)'}`,
-      background: gold
-        ? 'linear-gradient(180deg, rgba(196,66,42,0.14) 0%, rgba(196,66,42,0.05) 100%)'
-        : 'linear-gradient(180deg, rgba(30,26,20,0.06) 0%, rgba(30,26,20,0.02) 100%)',
-      boxShadow: gold
-        ? 'inset 0 1px 0 rgba(255,255,255,0.5), 0 2px 8px rgba(0,0,0,0.06)'
-        : 'inset 0 1px 0 rgba(255,255,255,0.6)',
+      width: '16px', height: '28px', borderRadius: '9px',
+      border: `1.5px solid ${gold ? 'var(--gold)' : 'var(--border-2)'}`,
       position: 'relative',
     }}>
       <div style={{
         position: 'absolute', top: '46%', left: '2px', right: '2px',
         height: '1px',
-        background: gold ? 'rgba(196,66,42,0.3)' : 'rgba(30,26,20,0.12)',
+        background: gold ? 'var(--gold-dim)' : 'var(--border-2)',
       }} />
     </div>
+  )
+}
+
+function VoiceIcon() {
+  return (
+    <svg width="40" height="40" viewBox="0 0 44 44" fill="none">
+      <rect x="6"  y="20" width="4" height="8"  rx="2" fill="var(--gold)" opacity="0.30"/>
+      <rect x="13" y="15" width="4" height="18" rx="2" fill="var(--gold)" opacity="0.55"/>
+      <rect x="20" y="10" width="4" height="24" rx="2" fill="var(--gold)"/>
+      <rect x="27" y="16" width="4" height="14" rx="2" fill="var(--gold)" opacity="0.60"/>
+      <rect x="34" y="20" width="4" height="6"  rx="2" fill="var(--gold)" opacity="0.30"/>
+    </svg>
+  )
+}
+
+function PhotoIcon() {
+  return (
+    <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+      <rect x="4" y="11" width="32" height="22" rx="5" stroke="var(--gold)" strokeWidth="1.4" opacity="0.7"/>
+      <circle cx="20" cy="22" r="7.5" stroke="var(--gold)" strokeWidth="1.4" opacity="0.7"/>
+      <circle cx="20" cy="22" r="3" fill="var(--gold)" opacity="0.35"/>
+      <path d="M14 11V9a2 2 0 012-2h8a2 2 0 012 2v2" stroke="var(--gold)" strokeWidth="1.4" strokeLinecap="round" opacity="0.7"/>
+    </svg>
+  )
+}
+
+function VideoIcon() {
+  return (
+    <svg width="40" height="40" viewBox="0 0 44 44" fill="none">
+      <rect x="4" y="11" width="26" height="22" rx="3" stroke="var(--gold)" strokeWidth="1.4" opacity="0.7"/>
+      <path d="M16 18l10 4-10 5V18z" fill="var(--gold)" opacity="0.6"/>
+      <path d="M30 17l9-4v18l-9-4V17z" stroke="var(--gold)" strokeWidth="1.4" strokeLinejoin="round" opacity="0.7"/>
+    </svg>
+  )
+}
+
+function TagIcon() {
+  return (
+    <svg width="40" height="40" viewBox="0 0 44 44" fill="none">
+      <circle cx="15" cy="14" r="5" stroke="var(--gold)" strokeWidth="1.4" opacity="0.7"/>
+      <path d="M5 34c0-5.5 4.5-9 10-9" stroke="var(--gold)" strokeWidth="1.4" strokeLinecap="round" opacity="0.7"/>
+      <circle cx="29" cy="14" r="5" stroke="var(--gold)" strokeWidth="1.4" opacity="0.7"/>
+      <path d="M39 34c0-5.5-4.5-9-10-9" stroke="var(--gold)" strokeWidth="1.4" strokeLinecap="round" opacity="0.7"/>
+    </svg>
   )
 }

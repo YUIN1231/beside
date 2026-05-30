@@ -30,13 +30,13 @@ export default function Auth() {
     router.replace('/')
   }
 
-  const inputStyle: React.CSSProperties = {
+  const lineStyle: React.CSSProperties = {
     width: '100%',
     background: 'transparent',
     border: 'none',
     borderBottom: '1px solid var(--border-2)',
     borderRadius: 0,
-    padding: '12px 0',
+    padding: '14px 0',
     fontSize: '18px',
     color: 'var(--text)',
     outline: 'none',
@@ -44,50 +44,67 @@ export default function Auth() {
   }
 
   return (
-    <main style={{ minHeight: '100svh', display: 'flex', flexDirection: 'column', background: 'var(--bg)', color: 'var(--text)' }}>
-
+    <main style={{
+      minHeight: '100svh',
+      background: 'var(--bg)',
+      color: 'var(--text)',
+      display: 'flex',
+      flexDirection: 'column',
+    }}>
       <div style={{ padding: '3.5rem 2rem 0' }}>
         <span style={{
+          fontFamily: 'var(--font-space)',
           fontSize: '10px',
           letterSpacing: '0.4em',
           textTransform: 'uppercase',
           color: 'var(--text-3)',
-          fontFamily: 'var(--font-space)',
         }}>beside</span>
       </div>
 
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '0 2rem 5rem' }}>
-
-        <div className="fade-up" style={{ marginBottom: '3rem' }}>
+      <div style={{
+        flex: 1,
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'center',
+        padding: '0 2rem 5rem',
+      }}>
+        <div className="fade-up" style={{ marginBottom: '3.5rem' }}>
           <h1 style={{
             fontFamily: 'var(--font-display)',
-            fontSize: 'clamp(3rem, 12vw, 4rem)',
-            lineHeight: 1.05,
+            fontSize: 'clamp(3rem, 13vw, 4.5rem)',
+            lineHeight: 1.04,
             fontStyle: 'italic',
             fontWeight: 400,
-            marginBottom: '1rem',
+            marginBottom: '1.25rem',
+            letterSpacing: '-0.01em',
           }}>
             Who<br />are you?
           </h1>
-          <p style={{ color: 'var(--text-2)', fontSize: '0.875rem', lineHeight: 1.65 }}>
+          <p style={{
+            color: 'var(--text-2)',
+            fontSize: '0.875rem',
+            lineHeight: 1.7,
+            fontFamily: 'var(--font-space)',
+            fontWeight: 300,
+          }}>
             People who were beside you<br />will find you by name.
           </p>
         </div>
 
-        <div className="fade-up-2" style={{ display: 'flex', flexDirection: 'column', gap: '2rem', marginBottom: '3rem' }}>
+        <div className="fade-up-2" style={{ display: 'flex', flexDirection: 'column', gap: '2.25rem', marginBottom: '3rem' }}>
           <div>
-            <p style={{ fontSize: '10px', letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--text-3)', marginBottom: '4px' }}>Name</p>
+            <p style={{ fontSize: '9px', letterSpacing: '0.24em', textTransform: 'uppercase', color: 'var(--text-3)', marginBottom: '6px', fontFamily: 'var(--font-space)' }}>Name</p>
             <input
               type="text"
               value={name}
               onChange={e => { setName(e.target.value); setError('') }}
               placeholder="your name"
               autoComplete="name"
-              style={inputStyle}
+              style={lineStyle}
             />
           </div>
           <div>
-            <p style={{ fontSize: '10px', letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--text-3)', marginBottom: '4px' }}>Email</p>
+            <p style={{ fontSize: '9px', letterSpacing: '0.24em', textTransform: 'uppercase', color: 'var(--text-3)', marginBottom: '6px', fontFamily: 'var(--font-space)' }}>Email</p>
             <input
               type="email"
               value={email}
@@ -95,38 +112,29 @@ export default function Auth() {
               onKeyDown={e => { if (e.key === 'Enter') submit() }}
               placeholder="your@email.com"
               autoComplete="email"
-              style={inputStyle}
+              style={lineStyle}
             />
           </div>
-
           {error && (
-            <p style={{ fontSize: '12px', color: '#C4422A' }}>{error}</p>
+            <p style={{ fontSize: '12px', color: 'var(--gold)', fontFamily: 'var(--font-space)' }}>{error}</p>
           )}
         </div>
 
         <div className="fade-up-3">
-          <button
-            onClick={submit}
-            disabled={loading}
-            style={{
-              background: 'none',
-              border: 'none',
-              padding: 0,
-              cursor: 'pointer',
-              color: 'var(--gold)',
-              fontSize: '1.125rem',
-              fontFamily: 'var(--font-display)',
-              fontStyle: 'italic',
-              letterSpacing: '0.01em',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem',
-              opacity: loading ? 0.5 : 1,
-            }}
-          >
+          <button onClick={submit} disabled={loading} style={{
+            background: 'none',
+            border: 'none',
+            padding: 0,
+            cursor: 'pointer',
+            color: 'var(--gold)',
+            fontSize: '1.25rem',
+            fontFamily: 'var(--font-display)',
+            fontStyle: 'italic',
+            opacity: loading ? 0.45 : 1,
+          }}>
             {loading ? 'Setting up…' : 'Begin →'}
           </button>
-          <p style={{ marginTop: '1.5rem', fontSize: '10px', color: 'var(--text-3)', lineHeight: 1.6 }}>
+          <p style={{ marginTop: '1.75rem', fontSize: '10px', color: 'var(--text-3)', lineHeight: 1.65, fontFamily: 'var(--font-space)' }}>
             Used only to identify you to people<br />you were physically beside.
           </p>
         </div>

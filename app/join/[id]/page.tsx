@@ -1,8 +1,16 @@
-﻿'use client'
+'use client'
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { getJoinSession, submitJoinEntry } from '../../lib/supabase'
-import { saveUser, markOnboarded, isAuthenticated, getUser } from '../../lib/storage'
+import { saveUser, markOnboarded, getUser } from '../../lib/storage'
+
+const LABEL: React.CSSProperties = {
+  fontFamily: 'var(--font-space)',
+  fontSize: '9px',
+  letterSpacing: '0.24em',
+  textTransform: 'uppercase' as const,
+  color: 'var(--text-3)',
+}
 
 export default function Join() {
   const { id }    = useParams<{ id: string }>()
@@ -16,10 +24,8 @@ export default function Join() {
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
-    // Pre-fill if already logged in
     const user = getUser()
     if (user) { setName(user.name); setEmail(user.email) }
-
     getJoinSession(id).then(data => {
       if (!data) setNotFound(true)
       else setSession(data)
@@ -34,131 +40,137 @@ export default function Join() {
     if (!n) { setError('Name is required.'); return }
     if (!isValidEmail(e)) { setError('Enter a valid email.'); return }
     setLoading(true)
-
     const ok = await submitJoinEntry(id, n, e)
     if (!ok) { setError('Something went wrong. Try again.'); setLoading(false); return }
-
-    // Register locally
     saveUser({ id: e, name: n, email: e })
     markOnboarded()
     setDone(true)
     setLoading(false)
   }
 
+  const lineStyle: React.CSSProperties = {
+    width: '100%',
+    background: 'transparent',
+    border: 'none',
+    borderBottom: '1px solid var(--border-2)',
+    padding: '14px 0',
+    fontSize: '18px',
+    color: 'var(--text)',
+    fontFamily: 'var(--font-inter)',
+    outline: 'none',
+  }
+
   if (notFound) return (
-    <main className="min-h-screen flex flex-col items-center justify-center px-8 text-center gap-4"
-      style={{ background: 'var(--bg)', color: 'var(--text)' }}>
-      <p className="text-sm" style={{ color: 'var(--text-2)' }}>This session has expired or doesn't exist.</p>
-      <a href="/" className="text-xs" style={{ color: 'var(--gold)' }}>Go home</a>
+    <main style={{ minHeight: '100svh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '2rem', textAlign: 'center', background: 'var(--bg)', color: 'var(--text)' }}>
+      <p style={{ fontSize: '13px', color: 'var(--text-2)', fontFamily: 'var(--font-space)', fontWeight: 300 }}>
+        This session has expired or doesn't exist.
+      </p>
+      <a href="/" style={{ color: 'var(--gold)', fontFamily: 'var(--font-display)', fontStyle: 'italic', fontSize: '1.125rem', marginTop: '1.5rem', textDecoration: 'none' }}>Go home →</a>
     </main>
   )
 
   if (!session) return (
-    <main className="min-h-screen flex items-center justify-center" style={{ background: 'var(--bg)' }}>
-      <div className="w-2 h-2 rounded-full" style={{ background: 'var(--gold)', animation: 'gold-glow 2s ease infinite' }} />
+    <main style={{ minHeight: '100svh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg)' }}>
+      <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--gold)', animation: 'gold-glow 2s ease infinite' }} />
     </main>
   )
 
   if (done) return (
-    <main className="min-h-screen flex flex-col items-center justify-center px-8 text-center gap-8"
-      style={{ background: 'var(--bg)', color: 'var(--text)' }}>
-      <div className="stamp w-24 h-24 rounded-full flex items-center justify-center"
-        style={{ background: 'var(--gold)', boxShadow: '0 0 40px rgba(184,200,240,0.4)' }}>
-        <span style={{ fontFamily: 'var(--font-space)', fontSize: '48px', color: 'var(--bg)', fontWeight: 700 }}>B</span>
+    <main style={{ minHeight: '100svh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '2rem', textAlign: 'center', gap: '0', background: 'var(--bg)', color: 'var(--text)' }}>
+      <div className="stamp" style={{
+        width: '96px', height: '96px', borderRadius: '50%',
+        background: 'var(--gold)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        marginBottom: '2.5rem',
+      }}>
+        <span style={{ fontFamily: 'var(--font-display)', fontSize: '44px', color: 'var(--bg)', fontWeight: 700, fontStyle: 'italic' }}>B</span>
       </div>
-      <div className="fade-up flex flex-col gap-3">
-        <h2 className="text-3xl" style={{ fontFamily: 'var(--font-space)' }}>You're in.</h2>
-        <p className="text-sm" style={{ color: 'var(--text-2)' }}>
-          You've been added to {session.host_name}'s capsule.<br />
-          It opens in 1 month.
-        </p>
-        <p className="text-xs mt-1" style={{ color: 'var(--text-3)' }}>{session.city}</p>
-      </div>
-      <a
-        href="/"
-        className="text-sm tracking-[0.06em] px-10 py-3.5 rounded-full transition-all active:scale-95"
-        style={{ background: 'linear-gradient(135deg, #d4e0ff 0%, #b8c8f0 100%)', color: '#06070d', fontWeight: 600 }}
-      >
-        Take your own capsule
+      <h2 className="fade-up" style={{
+        fontFamily: 'var(--font-display)',
+        fontSize: 'clamp(2.4rem, 10vw, 3.2rem)',
+        fontStyle: 'italic',
+        fontWeight: 400,
+        lineHeight: 1.08,
+        marginBottom: '1rem',
+      }}>You're in.</h2>
+      <p className="fade-up-2" style={{ fontSize: '14px', color: 'var(--text-2)', fontFamily: 'var(--font-space)', fontWeight: 300, lineHeight: 1.65, marginBottom: '0.5rem' }}>
+        You've been added to {session.host_name}'s capsule.
+      </p>
+      <p className="fade-up-2" style={{ fontSize: '12px', color: 'var(--text-3)', fontFamily: 'var(--font-space)', marginBottom: '3rem' }}>
+        {session.city} · Opens in 1 month
+      </p>
+      <a href="/" className="fade-up-3" style={{
+        color: 'var(--gold)', fontSize: '1.125rem',
+        fontFamily: 'var(--font-display)', fontStyle: 'italic',
+        textDecoration: 'none',
+      }}>
+        Take your own capsule →
       </a>
     </main>
   )
 
   return (
-    <main className="min-h-screen flex flex-col" style={{ background: 'var(--bg)', color: 'var(--text)' }}>
+    <main style={{ minHeight: '100svh', display: 'flex', flexDirection: 'column', background: 'var(--bg)', color: 'var(--text)' }}>
 
-      {/* header */}
-      <div className="flex items-center justify-center pt-16 pb-0">
-        <span className="text-base font-light tracking-[0.4em]" style={{
-          fontFamily: 'var(--font-space)',
-          background: 'linear-gradient(135deg, var(--gold-bright), var(--gold))',
-          WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-        }}>beside</span>
+      <div style={{ padding: '3.5rem 2rem 0', display: 'flex', justifyContent: 'center' }}>
+        <span style={{ fontFamily: 'var(--font-space)', fontSize: '10px', letterSpacing: '0.4em', textTransform: 'uppercase', color: 'var(--text-3)' }}>beside</span>
       </div>
 
-      <div className="flex-1 flex flex-col justify-center px-8 pb-16 gap-10">
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '0 2rem 5rem', gap: '3rem' }}>
 
         <div className="fade-up">
-          <p className="text-[11px] tracking-[0.22em] uppercase mb-3" style={{ color: 'var(--gold-dim)' }}>
+          <p style={{ ...LABEL, color: 'var(--gold-dim)', marginBottom: '1.25rem' }}>
             {session.city ?? 'Join capsule'}
           </p>
-          <h1 className="text-[2rem] leading-snug" style={{ fontFamily: 'var(--font-space)' }}>
+          <h1 style={{
+            fontFamily: 'var(--font-display)',
+            fontSize: 'clamp(2.2rem, 9vw, 3rem)',
+            fontStyle: 'italic',
+            fontWeight: 400,
+            lineHeight: 1.08,
+            marginBottom: '1rem',
+            letterSpacing: '-0.01em',
+          }}>
             {session.host_name} wants to<br />capture this moment.
           </h1>
-          <p className="text-sm mt-3 leading-relaxed" style={{ color: 'var(--text-2)' }}>
+          <p style={{ fontSize: '13px', color: 'var(--text-2)', fontFamily: 'var(--font-space)', fontWeight: 300, lineHeight: 1.65 }}>
             Enter your details to be sealed inside together.
           </p>
         </div>
 
-        <div className="fade-up-2 flex flex-col gap-4">
+        <div className="fade-up-2" style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
           <div>
-            <p className="text-[10px] tracking-[0.18em] uppercase mb-2" style={{ color: 'var(--text-3)' }}>Name</p>
-            <input
-              type="text"
-              value={name}
-              onChange={e => { setName(e.target.value); setError('') }}
-              placeholder="Your name"
-              autoComplete="name"
-              style={{
-                width: '100%', background: 'rgba(30,26,20,0.05)',
-                border: '1px solid rgba(30,26,20,0.12)', borderRadius: '16px',
-                padding: '16px 18px', color: 'var(--text)', fontSize: '16px', outline: 'none',
-              }}
-            />
+            <p style={{ ...LABEL, marginBottom: '6px' }}>Name</p>
+            <input type="text" value={name} onChange={e => { setName(e.target.value); setError('') }}
+              placeholder="your name" autoComplete="name" style={lineStyle} />
           </div>
           <div>
-            <p className="text-[10px] tracking-[0.18em] uppercase mb-2" style={{ color: 'var(--text-3)' }}>Email</p>
-            <input
-              type="email"
-              value={email}
-              onChange={e => { setEmail(e.target.value); setError('') }}
+            <p style={{ ...LABEL, marginBottom: '6px' }}>Email</p>
+            <input type="email" value={email} onChange={e => { setEmail(e.target.value); setError('') }}
               onKeyDown={e => { if (e.key === 'Enter') submit() }}
-              placeholder="your@email.com"
-              autoComplete="email"
-              style={{
-                width: '100%', background: 'rgba(30,26,20,0.05)',
-                border: '1px solid rgba(30,26,20,0.12)', borderRadius: '16px',
-                padding: '16px 18px', color: 'var(--text)', fontSize: '16px', outline: 'none',
-              }}
-            />
+              placeholder="your@email.com" autoComplete="email" style={lineStyle} />
           </div>
-          {error && <p className="text-xs" style={{ color: '#e87a7a' }}>{error}</p>}
+          {error && <p style={{ fontSize: '12px', color: 'var(--gold)', fontFamily: 'var(--font-space)' }}>{error}</p>}
         </div>
 
-        <div className="fade-up-3 flex flex-col gap-4">
-          <button
-            onClick={submit}
-            disabled={loading}
-            className="w-full py-4 rounded-full text-sm tracking-[0.06em] transition-all active:scale-95 disabled:opacity-50"
-            style={{
-              background: 'linear-gradient(135deg, #d4e0ff 0%, #b8c8f0 100%)',
-              color: '#06070d', fontWeight: 600,
-              boxShadow: '0 4px 24px rgba(184,200,240,0.22)',
-            }}
-          >
+        <div className="fade-up-3" style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+          <button onClick={submit} disabled={loading} style={{
+            background: 'var(--gold)',
+            color: 'var(--bg)',
+            border: 'none',
+            borderRadius: '50px',
+            padding: '16px',
+            fontSize: '14px',
+            fontFamily: 'var(--font-space)',
+            fontWeight: 600,
+            letterSpacing: '0.06em',
+            cursor: 'pointer',
+            opacity: loading ? 0.5 : 1,
+            width: '100%',
+          }}>
             {loading ? 'Joining…' : 'Join capsule'}
           </button>
-          <p className="text-center text-[10px] leading-relaxed" style={{ color: 'var(--text-3)' }}>
+          <p style={{ ...LABEL, textAlign: 'center', lineHeight: 1.65 }}>
             You'll be able to see this capsule when it opens in 1 month.
           </p>
         </div>

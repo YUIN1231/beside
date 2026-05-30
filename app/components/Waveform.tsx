@@ -15,7 +15,7 @@ export default function Waveform({
   frozen = false,
   frozenData,
   onFreezeData,
-  color = '#b8c8f0',
+  color = '#A86828',
   height = 72,
 }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
